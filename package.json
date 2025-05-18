@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "scripts": {
     "prepare": "husky",
+    "commit": "commit",
     "cm": "git-cz"
   },
   "keywords": [

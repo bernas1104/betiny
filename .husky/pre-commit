@@ -1,1 +1,4 @@
 # npm test
+cd csharp/
+dotnet test
+cd ../
