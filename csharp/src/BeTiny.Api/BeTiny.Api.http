@@ -1,6 +1,12 @@
 @BeTiny.Api_HostAddress = http://localhost:5001
 
-GET {{BeTiny.Api_HostAddress}}/weatherforecast/
+POST {{BeTiny.Api_HostAddress}}/v1/api/shorten
+Accept: application/json
+
+GET {{BeTiny.Api_HostAddress}}/v1/api/{shortUrl}
+Accept: application/json
+
+GET {{BeTiny.Api_HostAddress}}/health
 Accept: application/json
 
 ###
