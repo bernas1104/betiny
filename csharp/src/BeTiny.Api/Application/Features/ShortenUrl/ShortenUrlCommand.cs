@@ -7,10 +7,15 @@ namespace BeTiny.Api.Application.Features.ShortenUrl
 {
     public class ShortenUrlCommand : ICommandHandler<ShortenUrlRequest, ShortenUrlResponse>
     {
+        private readonly IRepository<Url, UrlId, string> _repository;
         private readonly IKVStore _kVStore;
 
-        public ShortenUrlCommand(IKVStore kVStore)
+        public ShortenUrlCommand(
+            IRepository<Url, UrlId, string> repository,
+            IKVStore kVStore
+        )
         {
+            _repository = repository;
             _kVStore = kVStore;
         }
 
@@ -21,19 +26,24 @@ namespace BeTiny.Api.Application.Features.ShortenUrl
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var counter = await _kVStore.GetAsync<Counter>("Counter");
-            if (counter is null)
+            /* var url = await _repository.GetByFilterAsync(
+                u => u.LongUrl.Equals(request.LongUrl),
+                cancellationToken
+            );
+            if (url is not null)
             {
-                throw new Exception("");
-            }
+                return new ShortenUrlResponse(
+                    $"http://betiny.com/{url.Id}",
+                    url.Id.ToString()
+                );
+            } */
+
+            var seed = await _kVStore.GetNextHashSeed(cancellationToken);
 
             var url = new Url(
-                UrlId.CreateUnique(counter.Value),
+                UrlId.CreateUnique(seed),
                 request.LongUrl
             );
-
-            counter.Increment();
-            await _kVStore.SetAsync("Counter", counter, null, cancellationToken);
 
             return new ShortenUrlResponse(
                 $"http://betiny.com/{url.Id}",

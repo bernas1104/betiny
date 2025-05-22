@@ -1,6 +1,5 @@
 using System.Text.Json;
 
-using BeTiny.Api.Domain.Interfaces;
 using BeTiny.Api.Domain.Interfaces.Repositories;
 
 using StackExchange.Redis;
@@ -32,9 +31,22 @@ namespace BeTiny.Api.Infra.KVStore
             );
         }
 
-        public Task RemoveAsync(string key, CancellationToken cancellationToken = default)
+        public async Task<long> GetNextHashSeed(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var hashSeed = (await _database.StringIncrementAsync("Counter")) - 1;
+
+            return hashSeed;
+        }
+
+        public async Task<bool> HasKeyAsync(string key, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var keyExists = await _database.KeyExistsAsync(key);
+
+            return keyExists;
         }
 
         public async Task SetAsync(string key, object? value, TimeSpan? expiry = null, CancellationToken cancellationToken = default)
