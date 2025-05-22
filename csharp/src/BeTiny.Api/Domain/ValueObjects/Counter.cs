@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 using BeTiny.Api.Domain.Common.ValueObjects;
 
 namespace BeTiny.Api.Domain.ValueObjects
@@ -6,9 +8,15 @@ namespace BeTiny.Api.Domain.ValueObjects
     {
         public int Value { get; private set; }
 
-        public Counter(int? value = null)
+        public Counter()
         {
-            Value = value ?? 0;
+            Value = default;
+        }
+
+        [JsonConstructor]
+        public Counter(int value)
+        {
+            Value = value;
         }
 
         public void Increment() => Value++;

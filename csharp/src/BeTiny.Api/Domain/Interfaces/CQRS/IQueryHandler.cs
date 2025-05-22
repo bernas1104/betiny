@@ -1,4 +1,4 @@
-namespace BeTiny.Api.Domain.Interfaces
+namespace BeTiny.Api.Domain.Interfaces.CQRS
 {
     public interface IQueryHandler<in TQuery, TResponse>
         where TQuery : IQuery<TResponse>

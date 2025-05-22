@@ -1,4 +1,4 @@
-using BeTiny.Api.Domain.Interfaces;
+using BeTiny.Api.Domain.Interfaces.CQRS;
 
 namespace BeTiny.Api.Application.Features.UrlRedirect
 {

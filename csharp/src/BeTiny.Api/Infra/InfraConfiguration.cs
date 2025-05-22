@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-using BeTiny.Api.Domain.Interfaces;
+using BeTiny.Api.Domain.Interfaces.Repositories;
 using BeTiny.Api.Infra.Database.Context;
 using BeTiny.Api.Infra.KVStore;
 

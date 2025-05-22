@@ -1,4 +1,4 @@
-namespace BeTiny.Api.Domain.Interfaces
+namespace BeTiny.Api.Domain.Interfaces.CQRS
 {
     public interface ICommandHandler<in TCommand, TResponse>
         where TCommand : ICommand<TResponse>

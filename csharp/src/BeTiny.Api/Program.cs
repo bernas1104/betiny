@@ -1,7 +1,9 @@
 using BeTiny.Api.Application;
 using BeTiny.Api.Application.Features.ShortenUrl;
 using BeTiny.Api.Application.Features.UrlRedirect;
-using BeTiny.Api.Domain.Interfaces;
+using BeTiny.Api.Domain.Interfaces.CQRS;
+using BeTiny.Api.Domain.Interfaces.Repositories;
+using BeTiny.Api.Domain.ValueObjects;
 using BeTiny.Api.Infra;
 using BeTiny.Api.Infra.Database.Context;
 
@@ -106,5 +108,22 @@ found, the result will be cached and the client will ne redirect accordingly.
     .WithOpenApi();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateAsyncScope())
+{
+    var key = "Counter";
+    var cancellationToken = new CancellationToken();
+    var kvStore = scope.ServiceProvider.GetRequiredService<IKVStore>();
+
+    var counter = await kvStore.GetAsync<Counter>(key, cancellationToken);
+    if (counter is not null)
+    {
+        return;
+    }
+
+    counter = new Counter();
+
+    await kvStore.SetAsync(key, counter, null, cancellationToken);
+};
 
 app.Run();
