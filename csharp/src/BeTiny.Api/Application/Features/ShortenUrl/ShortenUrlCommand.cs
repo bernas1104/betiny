@@ -26,7 +26,7 @@ namespace BeTiny.Api.Application.Features.ShortenUrl
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            /* var url = await _repository.GetByFilterAsync(
+            var url = await _repository.GetByFilterAsync(
                 u => u.LongUrl.Equals(request.LongUrl),
                 cancellationToken
             );
@@ -36,14 +36,16 @@ namespace BeTiny.Api.Application.Features.ShortenUrl
                     $"http://betiny.com/{url.Id}",
                     url.Id.ToString()
                 );
-            } */
+            }
 
             var seed = await _kVStore.GetNextHashSeed(cancellationToken);
 
-            var url = new Url(
+            url = new Url(
                 UrlId.CreateUnique(seed),
                 request.LongUrl
             );
+
+            await _repository.AddAsync(url, cancellationToken);
 
             return new ShortenUrlResponse(
                 $"http://betiny.com/{url.Id}",

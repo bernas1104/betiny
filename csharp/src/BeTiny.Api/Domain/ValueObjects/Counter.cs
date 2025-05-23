@@ -6,7 +6,7 @@ namespace BeTiny.Api.Domain.ValueObjects
 {
     public class Counter : ValueObject
     {
-        public int Value { get; private set; }
+        public long Value { get; private set; }
 
         public Counter()
         {
@@ -14,7 +14,7 @@ namespace BeTiny.Api.Domain.ValueObjects
         }
 
         [JsonConstructor]
-        public Counter(int value)
+        public Counter(long value)
         {
             Value = value;
         }
