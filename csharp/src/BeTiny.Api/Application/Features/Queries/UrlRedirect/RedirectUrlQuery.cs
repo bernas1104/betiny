@@ -31,11 +31,26 @@ namespace BeTiny.Api.Application.Features.Queries.UrlRedirect
             CancellationToken cancellationToken = default
         )
         {
+            _logger.LogInformation(
+                "[RedirectUrl] Checking if redirect URL ({ShortUrl}) is cached",
+                request.ShortUrl
+            );
+
             var url = await _store.GetAsync<Url>(request.ShortUrl, cancellationToken);
             if (url is not null)
             {
+                _logger.LogInformation(
+                    "[RedirectUrl] Redirect URL ({ShortUrl}) was found in cached. Redirecting",
+                    url.Id
+                );
+
                 return new RedirectUrlResponse(url.LongUrl);
             }
+
+            _logger.LogInformation(
+                "[RedirectUrl] Checking if URL ({ShortUrl}) is registered",
+                request.ShortUrl
+            );
 
             url = await _repository.GetByIdAsync(
                 UrlId.Create(request.ShortUrl),
@@ -43,10 +58,20 @@ namespace BeTiny.Api.Application.Features.Queries.UrlRedirect
             );
             if (url is null)
             {
+                _logger.LogError(
+                    "[RedirectUrl] URL ({ShortUrl}) not found",
+                    request.ShortUrl
+                );
+
                 throw new Exception("");
             }
 
             await _command.Handle(new CacheShortUrlRequest(url), cancellationToken);
+
+            _logger.LogInformation(
+                "[RedirectUrl] URL ({ShortUrl}) was found. Redirecting",
+                url.Id
+            );
 
             return new RedirectUrlResponse(url.LongUrl);
         }

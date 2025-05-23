@@ -6,7 +6,7 @@ namespace BeTiny.Api.Application.Features.Commands.CacheShortUrl
     public class CacheShortUrlCommand : ICommandHandler<CacheShortUrlRequest>
     {
         private readonly IKVStore _store;
-        private ILogger<CacheShortUrlCommand> _logger;
+        private readonly ILogger<CacheShortUrlCommand> _logger;
 
         public CacheShortUrlCommand(IKVStore store, ILogger<CacheShortUrlCommand> logger)
         {

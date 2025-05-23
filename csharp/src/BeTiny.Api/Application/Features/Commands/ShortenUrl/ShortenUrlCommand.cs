@@ -33,14 +33,28 @@ namespace BeTiny.Api.Application.Features.Commands.ShortenUrl
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var url = await _query.Handle(new GetUrlRequest(request.LongUrl), cancellationToken);
+            var url = await _query.Handle(
+                new GetUrlRequest(request.LongUrl),
+                cancellationToken
+            );
+
             if (url is not null)
             {
+                _logger.LogInformation(
+                    "[ShortenUrl] Requested URL ({Url}) has already been shortened",
+                    request.LongUrl
+                );
+
                 return new ShortenUrlResponse(
                     $"http://betiny.com/{url.Id}",
                     url.Id.ToString()
                 );
             }
+
+            _logger.LogInformation(
+                "[ShortenUrl] Shortening URL ({Url})",
+                request.LongUrl
+            );
 
             var seed = await _store.GetNextHashSeed(cancellationToken);
 
@@ -50,6 +64,12 @@ namespace BeTiny.Api.Application.Features.Commands.ShortenUrl
             );
 
             await _repository.AddAsync(url, cancellationToken);
+
+            _logger.LogInformation(
+                "[ShortenUrl] Requested URL ({Url}) shortened to ({ShortUrl})",
+                request.LongUrl,
+                url.Id
+            );
 
             return new ShortenUrlResponse(
                 $"http://betiny.com/{url.Id}",

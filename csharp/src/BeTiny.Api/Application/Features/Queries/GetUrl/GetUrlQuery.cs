@@ -25,6 +25,11 @@ namespace BeTiny.Api.Application.Features.Queries.GetUrl
             CancellationToken cancellationToken = default
         )
         {
+            _logger.LogInformation(
+                "[GetUrl] Checking if URL ({Url}) was already shortened",
+                request.LongUrl
+            );
+
             return _repository.GetByFilterAsync(
                 l => l.LongUrl == request.LongUrl,
                 cancellationToken
