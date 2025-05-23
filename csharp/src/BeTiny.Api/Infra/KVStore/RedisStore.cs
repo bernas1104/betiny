@@ -40,20 +40,14 @@ namespace BeTiny.Api.Infra.KVStore
             return hashSeed;
         }
 
-        public async Task<bool> HasKeyAsync(string key, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var keyExists = await _database.KeyExistsAsync(key);
-
-            return keyExists;
-        }
-
         public async Task SetAsync(string key, object? value, TimeSpan? expiry = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var stringValue = JsonSerializer.Serialize(value);
+            var stringValue = JsonSerializer.Serialize(
+                value,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+            );
 
             await _database.StringSetAsync(key, stringValue);
 

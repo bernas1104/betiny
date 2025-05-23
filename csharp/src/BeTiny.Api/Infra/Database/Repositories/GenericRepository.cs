@@ -2,7 +2,6 @@ using System.Linq.Expressions;
 
 using BeTiny.Api.Domain.Common.Entities;
 using BeTiny.Api.Domain.Common.ValueObjects;
-using BeTiny.Api.Domain.Entites;
 using BeTiny.Api.Domain.Interfaces.Repositories;
 using BeTiny.Api.Infra.Database.Context;
 
@@ -47,7 +46,10 @@ namespace BeTiny.Api.Infra.Database.Repositories
             CancellationToken cancellationToken = default
         )
         {
-            throw new NotImplementedException();
+            return GetByFilterAsync(
+                u => u.Id == id,
+                cancellationToken
+            );
         }
 
         public Task<bool> UpdateAsync(

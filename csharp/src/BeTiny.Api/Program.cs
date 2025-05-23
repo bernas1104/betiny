@@ -1,9 +1,7 @@
 using BeTiny.Api.Application;
-using BeTiny.Api.Application.Features.ShortenUrl;
-using BeTiny.Api.Application.Features.UrlRedirect;
+using BeTiny.Api.Application.Features.Commands.ShortenUrl;
+using BeTiny.Api.Application.Features.Queries.UrlRedirect;
 using BeTiny.Api.Domain.Interfaces.CQRS;
-using BeTiny.Api.Domain.Interfaces.Repositories;
-using BeTiny.Api.Domain.ValueObjects;
 using BeTiny.Api.Infra;
 using BeTiny.Api.Infra.Database.Context;
 
@@ -86,7 +84,7 @@ app.MapGet(
         var request = new RedirectUrlRequest(shortUrl);
         var response = await handler.Handle(request, cancellationToken);
 
-        return Results.Redirect(response.LongUrl);
+        return Results.Redirect(response?.LongUrl ?? string.Empty);
     })
     .WithName("GetRedirectUrl")
     .WithSummary("Takes a short URL and redirects to the respective long URL")

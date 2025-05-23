@@ -1,4 +1,4 @@
-namespace BeTiny.Api.Application.Features.ShortenUrl
+namespace BeTiny.Api.Application.Features.Commands.ShortenUrl
 {
     public record ShortenUrlResponse(string ShortenedUrl, string UrlHash);
 }

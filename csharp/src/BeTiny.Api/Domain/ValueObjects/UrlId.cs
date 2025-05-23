@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 using BeTiny.Api.Domain.Common.Utils;
 using BeTiny.Api.Domain.Common.ValueObjects;
 
@@ -7,6 +9,7 @@ namespace BeTiny.Api.Domain.ValueObjects
     {
         public override string Value { get; protected set; }
 
+        [JsonConstructor]
         protected UrlId(string value)
         {
             Value = value;

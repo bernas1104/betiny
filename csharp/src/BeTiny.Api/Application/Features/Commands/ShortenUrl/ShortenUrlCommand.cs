@@ -1,22 +1,29 @@
+using BeTiny.Api.Application.Features.Queries.GetUrl;
 using BeTiny.Api.Domain.Entites;
 using BeTiny.Api.Domain.Interfaces.CQRS;
 using BeTiny.Api.Domain.Interfaces.Repositories;
 using BeTiny.Api.Domain.ValueObjects;
 
-namespace BeTiny.Api.Application.Features.ShortenUrl
+namespace BeTiny.Api.Application.Features.Commands.ShortenUrl
 {
     public class ShortenUrlCommand : ICommandHandler<ShortenUrlRequest, ShortenUrlResponse>
     {
         private readonly IRepository<Url, UrlId, string> _repository;
-        private readonly IKVStore _kVStore;
+        private readonly IQueryHandler<GetUrlRequest, Url> _query;
+        private readonly IKVStore _store;
+        private readonly ILogger<ShortenUrlCommand> _logger;
 
         public ShortenUrlCommand(
             IRepository<Url, UrlId, string> repository,
-            IKVStore kVStore
+            IQueryHandler<GetUrlRequest, Url> query,
+            IKVStore store,
+            ILogger<ShortenUrlCommand> logger
         )
         {
             _repository = repository;
-            _kVStore = kVStore;
+            _query = query;
+            _store = store;
+            _logger = logger;
         }
 
         public async Task<ShortenUrlResponse> Handle(
@@ -26,10 +33,7 @@ namespace BeTiny.Api.Application.Features.ShortenUrl
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var url = await _repository.GetByFilterAsync(
-                u => u.LongUrl.Equals(request.LongUrl),
-                cancellationToken
-            );
+            var url = await _query.Handle(new GetUrlRequest(request.LongUrl), cancellationToken);
             if (url is not null)
             {
                 return new ShortenUrlResponse(
@@ -38,7 +42,7 @@ namespace BeTiny.Api.Application.Features.ShortenUrl
                 );
             }
 
-            var seed = await _kVStore.GetNextHashSeed(cancellationToken);
+            var seed = await _store.GetNextHashSeed(cancellationToken);
 
             url = new Url(
                 UrlId.CreateUnique(seed),

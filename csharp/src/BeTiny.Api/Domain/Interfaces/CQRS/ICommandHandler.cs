@@ -5,4 +5,10 @@ namespace BeTiny.Api.Domain.Interfaces.CQRS
     {
         Task<TResponse> Handle(TCommand request, CancellationToken cancellationToken = default);
     }
+
+    public interface ICommandHandler<in TCommand>
+        where TCommand : ICommand
+    {
+        Task Handle(TCommand request, CancellationToken cancellationToken = default);
+    }
 }
