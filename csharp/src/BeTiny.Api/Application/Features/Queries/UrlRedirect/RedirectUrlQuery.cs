@@ -1,3 +1,5 @@
+using BeTiny.Api.Application.Common.Enums;
+using BeTiny.Api.Application.Common.Models;
 using BeTiny.Api.Application.Features.Commands.CacheShortUrl;
 using BeTiny.Api.Domain.Entites;
 using BeTiny.Api.Domain.Interfaces.CQRS;
@@ -6,7 +8,7 @@ using BeTiny.Api.Domain.ValueObjects;
 
 namespace BeTiny.Api.Application.Features.Queries.UrlRedirect
 {
-    public class RedirectUrlQuery : IQueryHandler<RedirectUrlRequest, RedirectUrlResponse>
+    public class RedirectUrlQuery : IQueryHandler<RedirectUrlRequest, Result<RedirectUrlResponse>>
     {
         private readonly IRepository<Url, UrlId, string> _repository;
         private readonly IKVStore _store;
@@ -26,7 +28,7 @@ namespace BeTiny.Api.Application.Features.Queries.UrlRedirect
             _logger = logger;
         }
 
-        public async Task<RedirectUrlResponse?> Handle(
+        public async Task<Result<RedirectUrlResponse>> Handle(
             RedirectUrlRequest request,
             CancellationToken cancellationToken = default
         )
@@ -44,7 +46,7 @@ namespace BeTiny.Api.Application.Features.Queries.UrlRedirect
                     url.Id
                 );
 
-                return new RedirectUrlResponse(url.LongUrl);
+                return Result<RedirectUrlResponse>.Success(new RedirectUrlResponse(url.LongUrl));
             }
 
             _logger.LogInformation(
@@ -63,7 +65,10 @@ namespace BeTiny.Api.Application.Features.Queries.UrlRedirect
                     request.ShortUrl
                 );
 
-                throw new Exception("");
+                return Result<RedirectUrlResponse>.Failure(
+                    Error.NotFound,
+                    $"URL {request.ShortUrl} not found"
+                );
             }
 
             await _command.Handle(new CacheShortUrlRequest(url), cancellationToken);
@@ -73,7 +78,7 @@ namespace BeTiny.Api.Application.Features.Queries.UrlRedirect
                 url.Id
             );
 
-            return new RedirectUrlResponse(url.LongUrl);
+            return Result<RedirectUrlResponse>.Success(new RedirectUrlResponse(url.LongUrl));
         }
     }
 }

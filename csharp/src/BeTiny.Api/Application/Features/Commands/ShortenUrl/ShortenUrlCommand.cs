@@ -1,3 +1,4 @@
+using BeTiny.Api.Application.Common.Models;
 using BeTiny.Api.Application.Features.Queries.GetUrl;
 using BeTiny.Api.Domain.Entites;
 using BeTiny.Api.Domain.Interfaces.CQRS;
@@ -6,16 +7,16 @@ using BeTiny.Api.Domain.ValueObjects;
 
 namespace BeTiny.Api.Application.Features.Commands.ShortenUrl
 {
-    public class ShortenUrlCommand : ICommandHandler<ShortenUrlRequest, ShortenUrlResponse>
+    public class ShortenUrlCommand : ICommandHandler<ShortenUrlRequest, Result<ShortenUrlResponse>>
     {
         private readonly IRepository<Url, UrlId, string> _repository;
-        private readonly IQueryHandler<GetUrlRequest, Url> _query;
+        private readonly IQueryHandler<GetUrlRequest, Result<Url>> _query;
         private readonly IKVStore _store;
         private readonly ILogger<ShortenUrlCommand> _logger;
 
         public ShortenUrlCommand(
             IRepository<Url, UrlId, string> repository,
-            IQueryHandler<GetUrlRequest, Url> query,
+            IQueryHandler<GetUrlRequest, Result<Url>> query,
             IKVStore store,
             ILogger<ShortenUrlCommand> logger
         )
@@ -26,28 +27,33 @@ namespace BeTiny.Api.Application.Features.Commands.ShortenUrl
             _logger = logger;
         }
 
-        public async Task<ShortenUrlResponse> Handle(
+        public async Task<Result<ShortenUrlResponse>> Handle(
             ShortenUrlRequest request,
             CancellationToken cancellationToken = default
         )
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var url = await _query.Handle(
+            Url url;
+            var result = await _query.Handle(
                 new GetUrlRequest(request.LongUrl),
                 cancellationToken
             );
 
-            if (url is not null)
+            if (result.IsSuccess)
             {
+                url = result.Value!;
+
                 _logger.LogInformation(
                     "[ShortenUrl] Requested URL ({Url}) has already been shortened",
                     request.LongUrl
                 );
 
-                return new ShortenUrlResponse(
-                    $"http://betiny.com/{url.Id}",
-                    url.Id.ToString()
+                return Result<ShortenUrlResponse>.Success(
+                        new ShortenUrlResponse(
+                        $"http://betiny.com/{url.Id}",
+                        url.Id.ToString()
+                    )
                 );
             }
 
@@ -71,9 +77,11 @@ namespace BeTiny.Api.Application.Features.Commands.ShortenUrl
                 url.Id
             );
 
-            return new ShortenUrlResponse(
-                $"http://betiny.com/{url.Id}",
-                url.Id.ToString()
+            return Result<ShortenUrlResponse>.Success(
+                new ShortenUrlResponse(
+                    $"http://betiny.com/{url.Id}",
+                    url.Id.ToString()
+                )
             );
         }
     }

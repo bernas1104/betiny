@@ -1,9 +1,10 @@
 using BeTiny.Api.Application;
+using BeTiny.Api.Application.Common.Helpers;
+using BeTiny.Api.Application.Common.Models;
 using BeTiny.Api.Application.Features.Commands.ShortenUrl;
 using BeTiny.Api.Application.Features.Queries.UrlRedirect;
 using BeTiny.Api.Domain.Interfaces.CQRS;
 using BeTiny.Api.Infra;
-using BeTiny.Api.Infra.Database.Context;
 
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,19 +42,21 @@ app.UseCors(
 app.MapPost(
     "/v1/api/shorten",
     async (
-        [FromServices] ICommandHandler<ShortenUrlRequest, ShortenUrlResponse> handler,
-        [FromServices] BeTinyDbContext context,
+        [FromServices] ICommandHandler<ShortenUrlRequest, Result<ShortenUrlResponse>> handler,
         [FromBody] ShortenUrlRequest request,
+        HttpContext context,
         CancellationToken cancellationToken
     ) =>
     {
-        var shortenedUrl = await handler.Handle(request, cancellationToken);
+        var result = await handler.Handle(request, cancellationToken);
 
-        return Results.CreatedAtRoute(
-            "GetRedirectUrl",
-            new { shortUrl = shortenedUrl.UrlHash },
-            shortenedUrl
-        );
+        return result.IsSuccess ?
+            Results.CreatedAtRoute(
+                "GetRedirectUrl",
+                new { shortUrl = result.Value?.UrlHash },
+                result
+            ) :
+            ResultsHelper.GetResultFromError(context, result);
     }
     )
     .WithName("PostShortenURL")
@@ -69,22 +72,26 @@ to the long URL and performe a redirect.
 "
     )
     .WithTags("URL")
-    .Produces(StatusCodes.Status201Created)
+    .Produces<ShortenUrlResponse>(StatusCodes.Status201Created)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
     .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
     .WithOpenApi();
 
 app.MapGet(
     "/v1/api/{shortUrl}",
     async (
-        [FromServices] IQueryHandler<RedirectUrlRequest, RedirectUrlResponse> handler,
+        [FromServices] IQueryHandler<RedirectUrlRequest, Result<RedirectUrlResponse>> handler,
         [FromRoute] string shortUrl,
+        HttpContext context,
         CancellationToken cancellationToken
     ) =>
     {
         var request = new RedirectUrlRequest(shortUrl);
-        var response = await handler.Handle(request, cancellationToken);
+        var result = await handler.Handle(request, cancellationToken);
 
-        return Results.Redirect(response?.LongUrl ?? string.Empty);
+        return result.IsSuccess ?
+            Results.Redirect(result.Value?.LongUrl!) :
+            ResultsHelper.GetResultFromError(context, result);
     })
     .WithName("GetRedirectUrl")
     .WithSummary("Takes a short URL and redirects to the respective long URL")

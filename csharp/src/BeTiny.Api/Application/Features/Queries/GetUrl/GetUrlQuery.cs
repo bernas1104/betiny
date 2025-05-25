@@ -1,3 +1,5 @@
+using BeTiny.Api.Application.Common.Enums;
+using BeTiny.Api.Application.Common.Models;
 using BeTiny.Api.Domain.Entites;
 
 using BeTiny.Api.Domain.Interfaces.CQRS;
@@ -6,7 +8,7 @@ using BeTiny.Api.Domain.ValueObjects;
 
 namespace BeTiny.Api.Application.Features.Queries.GetUrl
 {
-    public class GetUrlQuery : IQueryHandler<GetUrlRequest, Url>
+    public class GetUrlQuery : IQueryHandler<GetUrlRequest, Result<Url>>
     {
         private readonly IRepository<Url, UrlId, string> _repository;
         private readonly ILogger<GetUrlQuery> _logger;
@@ -20,7 +22,7 @@ namespace BeTiny.Api.Application.Features.Queries.GetUrl
             _logger = logger;
         }
 
-        public Task<Url?> Handle(
+        public async Task<Result<Url>> Handle(
             GetUrlRequest request,
             CancellationToken cancellationToken = default
         )
@@ -30,10 +32,14 @@ namespace BeTiny.Api.Application.Features.Queries.GetUrl
                 request.LongUrl
             );
 
-            return _repository.GetByFilterAsync(
+            var url = await _repository.GetByFilterAsync(
                 l => l.LongUrl == request.LongUrl,
                 cancellationToken
             );
+
+            return url is not null ?
+                Result<Url>.Success(url) :
+                Result<Url>.Failure(Error.NotFound, "URL not found");
         }
     }
 }

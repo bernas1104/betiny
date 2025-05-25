@@ -1,3 +1,4 @@
+using BeTiny.Api.Application.Common.Helpers;
 using BeTiny.Api.Domain.Interfaces.CQRS;
 
 namespace BeTiny.Api.Application
@@ -18,6 +19,12 @@ namespace BeTiny.Api.Application
                     .WithScopedLifetime()
                     .AddClasses(
                         classes => classes.AssignableTo(typeof(ICommandHandler<,>)),
+                        publicOnly: false
+                    )
+                    .AsImplementedInterfaces()
+                    .WithScopedLifetime()
+                    .AddClasses(
+                        classes => classes.AssignableTo(typeof(ICommandHandler<>)),
                         publicOnly: false
                     )
                     .AsImplementedInterfaces()
