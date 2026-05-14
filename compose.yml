@@ -1,0 +1,28 @@
+services:
+  ngpsql:
+    image: postgres:17.5
+    restart: unless-stopped
+    ports:
+      - ${BETINY_NPGSQL_PORT-5432}:5432
+    environment:
+      POSTGRES_USER: ${BETINY_NPGSQL_USER}
+      POSTGRES_PASSWORD: ${BETINY_NPGSQL_PASSWORD}
+      POSTGRES_DATABASE: ${BETINY_NPGSQL_DATABASE}
+    volumes:
+      - npgsql:/var/lib/postgresql/data
+  
+  redis:
+    image: redis:7.4.3
+    restart: unless-stopped
+    command:
+      redis-server --save 60 1 --logLevel warning 
+    ports:
+      - ${BETINY_REDIS_PORT-6379}:6379
+    volumes:
+      - redis:/data
+
+volumes:
+  npgsql:
+    driver: local
+  redis:
+    driver: local

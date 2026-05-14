@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BeTiny.Api/BeTiny.Api.csproj" />
+    <Project Path="src/BeTiny.Application/BeTiny.Application.csproj" />
+    <Project Path="src/BeTiny.Domain/BeTiny.Domain.csproj" />
+    <Project Path="src/BeTiny.Infrastructure/BeTiny.Infrastructure.csproj" />
+    <Project Path="src/BeTiny.IOC/BeTiny.IOC.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/BeTiny.Tests/BeTiny.Tests.csproj" />
+  </Folder>
+</Solution>
