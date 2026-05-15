@@ -1,0 +1,24 @@
+using BeTiny.Domain.Common.Entities;
+using BeTiny.Domain.ValueObjects;
+
+namespace BeTiny.Domain.Entities;
+
+public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
+{
+    public UserId? UserId { get; private set; }
+    public string OriginalUrl { get; private set; }
+    public string ShortCode { get; private set; }
+    public string? CustomAlias { get; private set; }
+    public DateTime? ExpiresAt { get; private set; }
+
+    public ShortUrl(string originalUrl, string shortCode)
+    {
+        Id = ShortUrlId.CreateUnique();
+        OriginalUrl = originalUrl;
+        ShortCode = shortCode;
+        IsActive = true;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    public bool IsExpired() => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
+}

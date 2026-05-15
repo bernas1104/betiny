@@ -7,6 +7,7 @@ namespace BeTiny.Infrastructure.Postgres.Context
     public class BeTinyContext : DbContext
     {
         public DbSet<User> Users { get; set; }
+        public DbSet<ShortUrl> ShortUrls { get; set; }
 
         public BeTinyContext(DbContextOptions<BeTinyContext> options)
             : base(options)
@@ -18,6 +19,7 @@ namespace BeTiny.Infrastructure.Postgres.Context
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfiguration(new UserEntityConfig());
+            modelBuilder.ApplyConfiguration(new ShortUrlEntityConfig());
         }
     }
 }
