@@ -17,6 +17,5 @@ public abstract class AggregateRoot<TId, TIdType> : Entity<TId>
     protected AggregateRoot(TId id)
     {
         Id = id;
-        CreatedAt = DateTime.UtcNow;
     }
 }
