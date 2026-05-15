@@ -39,6 +39,11 @@ public class ShortCodeGenerator : IShortCodeGenerator
                 "Hash seed must be a non-negative number."
             );
 
+        if (hashSeed > 3521614606207L) // 62^7 - 1
+            throw new IndexOutOfRangeException(
+                "Hash seed exceeds maximum value for 7-character base-62 encoding."
+            );
+
         var buffer = new char[7];
         var pos = buffer.Length;
 

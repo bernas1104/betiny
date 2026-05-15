@@ -6,15 +6,15 @@ namespace BeTiny.Tests.Application.Features.Services;
 
 public class ShortCodeGeneratorTest
 {
-    private readonly Mock<IKVStore> _kVStoreMock;
+    private readonly Mock<IKVStore> kVStoreMock;
     private readonly ShortCodeGenerator _shortCodeGenerator;
 
     private const long MaxHashSeed = 3521614606207L; // 62^7 - 1
 
     public ShortCodeGeneratorTest()
     {
-        _kVStoreMock = new Mock<IKVStore>();
-        _shortCodeGenerator = new ShortCodeGenerator(_kVStoreMock.Object);
+        kVStoreMock = new Mock<IKVStore>();
+        _shortCodeGenerator = new ShortCodeGenerator(kVStoreMock.Object);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class ShortCodeGeneratorTest
     [Fact]
     public async Task GenerateShortCode_ThrowsWhenHashSeedIsNegative()
     {
-        _kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+        kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
             .ReturnsAsync(-1);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
@@ -42,7 +42,7 @@ public class ShortCodeGeneratorTest
     [Fact]
     public async Task GenerateShortCode_ReturnsExpectedShortCode()
     {
-        _kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+        kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
             .ReturnsAsync(12345);
 
         var result = await _shortCodeGenerator.GenerateShortCode();
@@ -53,11 +53,11 @@ public class ShortCodeGeneratorTest
     [Fact]
     public async Task GenerateShortCode_ThrowsWhenSeedIsGreaterThanMaxValue()
     {
-        _kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+        kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
             .ReturnsAsync(MaxHashSeed + 1); // 62^7
 
-        await  Assert.ThrowsAsync<IndexOutOfRangeException>(
-            () =>_shortCodeGenerator.GenerateShortCode()
+        await Assert.ThrowsAsync<IndexOutOfRangeException>(
+            () => _shortCodeGenerator.GenerateShortCode()
         );
     }
 }

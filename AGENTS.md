@@ -116,6 +116,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - Test files live in `test/BeTiny.Tests/` mirroring the `src/` folder structure
 - Use `dotnet test --filter` to target specific tests; no custom test runner scripts
 - Coverlet is configured for code coverage
+- Use the Arrange-Act-Assert (AAA) test pattern
 
 ### Naming Conventions
 

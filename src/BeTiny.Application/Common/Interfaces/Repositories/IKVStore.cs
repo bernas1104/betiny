@@ -7,5 +7,5 @@ public interface IKVStore
     /// </summary>
     /// <param name="ct">Cancellation token</param>
     /// <returns>The next hash seed</returns>
-    public Task<long> GetNextHashSeed(CancellationToken ct = default);
+    Task<long> GetNextHashSeed(CancellationToken ct = default);
 }
