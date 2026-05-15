@@ -125,3 +125,6 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - `.vscode/settings.json` is committed and should be updated for project-wide settings
 - No `.editorconfig`, no `.cursorrules`, no Copilot instructions file currently exist
 - `.vscode/` and `.idea/` in `.gitignore`
+
+## Updates
+After any changes to the project, update, if necessary, the `README.md` and `AGENTS.md` files.
