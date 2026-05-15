@@ -26,6 +26,7 @@ public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
         ShortCode = shortCode;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
+        ClickEvents = [];
     }
 
     public bool IsExpired() => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
