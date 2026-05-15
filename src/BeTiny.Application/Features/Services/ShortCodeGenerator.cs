@@ -40,7 +40,7 @@ public class ShortCodeGenerator : IShortCodeGenerator
             );
 
         if (hashSeed > 3521614606207L) // 62^7 - 1
-            throw new IndexOutOfRangeException(
+            throw new InvalidOperationException(
                 "Hash seed exceeds maximum value for 7-character base-62 encoding."
             );
 
