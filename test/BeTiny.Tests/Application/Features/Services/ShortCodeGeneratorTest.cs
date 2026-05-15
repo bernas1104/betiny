@@ -1,0 +1,63 @@
+using BeTiny.Application.Common.Interfaces.Repositories;
+using BeTiny.Application.Features.Services;
+using Moq;
+
+namespace BeTiny.Tests.Application.Features.Services;
+
+public class ShortCodeGeneratorTest
+{
+    private readonly Mock<IKVStore> _kVStoreMock;
+    private readonly ShortCodeGenerator _shortCodeGenerator;
+
+    private const long MaxHashSeed = 3521614606207L; // 62^7 - 1
+
+    public ShortCodeGeneratorTest()
+    {
+        _kVStoreMock = new Mock<IKVStore>();
+        _shortCodeGenerator = new ShortCodeGenerator(_kVStoreMock.Object);
+    }
+
+    [Fact]
+    public async Task GenerateShortCode_ThrowsWhenCancellationRequested()
+    {
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _shortCodeGenerator.GenerateShortCode(cts.Token)
+        );
+    }
+
+    [Fact]
+    public async Task GenerateShortCode_ThrowsWhenHashSeedIsNegative()
+    {
+        _kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(-1);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _shortCodeGenerator.GenerateShortCode()
+        );
+    }
+
+    [Fact]
+    public async Task GenerateShortCode_ReturnsExpectedShortCode()
+    {
+        _kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(12345);
+
+        var result = await _shortCodeGenerator.GenerateShortCode();
+
+        Assert.Equal("3D7", result);
+    }
+
+    [Fact]
+    public async Task GenerateShortCode_ThrowsWhenSeedIsGreaterThanMaxValue()
+    {
+        _kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MaxHashSeed + 1); // 62^7
+
+        await  Assert.ThrowsAsync<IndexOutOfRangeException>(
+            () =>_shortCodeGenerator.GenerateShortCode()
+        );
+    }
+}
