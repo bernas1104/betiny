@@ -78,6 +78,24 @@ The commit-msg hook runs `npx commitlint`, and the pre-commit hook runs `dotnet 
 - **camelCase** for local variables, private fields
 - **No BOM** on .cs files (UTF-8 without BOM preferred)
 - **No comments** on implementation code unless the intent is genuinely non-obvious
+- **EF Core entity convention**: private parameterless constructor with `#pragma warning disable CS8618` for entities that require it
+
+### Domain Patterns
+
+The project follows DDD-inspired patterns with these base classes in `BeTiny.Domain.Common`:
+
+- **`Entity<TIdType>`** — base for all entities; provides `Id`, `CreatedAt`, `UpdatedAt`, `DeletedAt`
+- **`AggregateRoot<TId, TIdType>`** — extends `Entity<TId>` where `TId : AggregateRootId<TIdType>`; marks an entity as an aggregate root
+- **`ValueObject`** — base for value objects with structural equality via `GetEqualityComponents()`
+- **`AggregateRootId<TIdType>`** — extends `ValueObject`; wraps the underlying ID type (`Value` property)
+
+Concrete entities (e.g., `User : AggregateRoot<UserId, Guid>`) use a typed ID value object (e.g., `UserId : AggregateRootId<Guid>`) created via a static factory (`UserId.CreateUnique()`).
+
+### EF Core Configuration
+
+- Entity configurations are in `src/BeTiny.Infrastructure/Postgres/EntityConfig/` implementing `IEntityTypeConfiguration<T>`
+- The `DbContext` (`BeTinyContext` in `src/BeTiny.Infrastructure/Postgres/Context/`) applies configs via `modelBuilder.ApplyConfigurationsFromAssembly`
+- Migrations live in `src/BeTiny.Infrastructure/Postgres/Migrations/`
 
 ### Project Dependencies (Layer Rules)
 
@@ -119,6 +137,8 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - **Redis** — service name `redis` in compose.yml
 - Environment variables prefixed `BETINY_NPGSQL_*` and `BETINY_REDIS_*`
 - Default ports: PostgreSQL 5432, Redis 6379
+- DbContext registration (`BeTinyContext`) is configured via `IOC/DependencyInjections/ConfigureDatabases.cs` using `AddDbContext` + `UseNpgsql`
+- Connection strings come from `appsettings.Development.json` under `ConnectionStrings:Postgres` and `ConnectionStrings:Redis`
 
 ## VS Code / Editor
 
