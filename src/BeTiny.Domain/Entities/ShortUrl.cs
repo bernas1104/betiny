@@ -11,6 +11,13 @@ public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     public string? CustomAlias { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
 
+    #pragma warning disable CS8618
+    // Private empty constructor needed by EF Core
+    private ShortUrl()
+    {
+    }
+    #pragma warning restore
+
     public ShortUrl(string originalUrl, string shortCode)
     {
         Id = ShortUrlId.CreateUnique();
