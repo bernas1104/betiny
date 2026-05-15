@@ -14,6 +14,7 @@ public static class ConfigureDependencyInjection
   )
   {
     services.RegisterOptions(configuration);
+    services.RegisterDatabases(configuration);
     
     return services;
   }

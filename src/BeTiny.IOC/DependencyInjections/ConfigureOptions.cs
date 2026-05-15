@@ -1,4 +1,3 @@
-using BeTiny.Application.Common.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,10 +10,7 @@ public static class ConfigureOptions
         IConfiguration configuration
     )
     {
-        services.Configure<ConnectionStrings>(
-            c => configuration.GetSection(nameof(ConnectionStrings))
-                .Bind(c)
-        );
+        //
 
         return services;
     }
