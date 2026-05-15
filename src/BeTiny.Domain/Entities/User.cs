@@ -9,7 +9,6 @@ public sealed class User : AggregateRoot<UserId, Guid>
     public string Email { get; private set; }
     public string PasswordHash { get; private set; }
     public Plans Plan { get; private set; }
-    public bool IsActive { get; private set; }
 
     #pragma warning disable CS8618
     // Private empty constructor needed by EF Core
@@ -25,5 +24,6 @@ public sealed class User : AggregateRoot<UserId, Guid>
         PasswordHash = string.Empty;
         Plan = Plans.Free;
         IsActive = true;
+        CreatedAt = DateTime.UtcNow;
     }
 }
