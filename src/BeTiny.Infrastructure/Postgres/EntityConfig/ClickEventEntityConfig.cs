@@ -29,5 +29,12 @@ public class ClickEventEntityConfig : IEntityTypeConfiguration<ClickEvent>
         builder.Property(e => e.DeviceType)
             .HasConversion<string>()
             .HasMaxLength(50);
+
+        builder.HasOne(e => e.ShortUrl)
+            .WithMany(s => s.ClickEvents)
+            .HasForeignKey(e => e.ShortUrlId);
+
+        builder.HasIndex(x => x.CreatedAt)
+            .IsDescending();
     }
 }

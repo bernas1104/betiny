@@ -7,7 +7,7 @@ namespace BeTiny.Domain.Entities;
 public sealed class ClickEvent : AggregateRoot<ClickEventId, Guid>
 {
     public ShortUrlId ShortUrlId { get; private set; }
-    public DateTime ClickedAt { get => CreatedAt; }
+    public ShortUrl ShortUrl { get; set; } = null!;
     public string IpAddress { get; private set; }
     public string Country { get; private set; }
     public string UserAgent { get; private set; }

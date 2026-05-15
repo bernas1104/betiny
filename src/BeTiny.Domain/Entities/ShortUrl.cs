@@ -10,6 +10,7 @@ public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     public string ShortCode { get; private set; }
     public string? CustomAlias { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
+    public IReadOnlyList<ClickEvent> ClickEvents { get; private set; }
 
     #pragma warning disable CS8618
     // Private empty constructor needed by EF Core
