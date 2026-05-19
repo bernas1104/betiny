@@ -1,4 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using BeTiny.Application.Common.Interfaces.Repositories;
+using BeTiny.Application.Common.Interfaces.Services;
+using BeTiny.Application.Features.Services;
 using BeTiny.IOC.DependencyInjections;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +18,9 @@ public static class ConfigureDependencyInjection
   {
     services.RegisterOptions(configuration);
     services.RegisterDatabases(configuration);
+    services.RegisterHandlers();
+    services.RegisterServices();
+    services.RegisterValidators();
     
     return services;
   }
