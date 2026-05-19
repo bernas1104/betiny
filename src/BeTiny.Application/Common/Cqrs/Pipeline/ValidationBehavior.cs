@@ -14,6 +14,7 @@ namespace BeTiny.Application.Common.Cqrs.Pipeline;
 public class ValidationBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
+    where TResponse : IResult, new()
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -47,22 +48,18 @@ public class ValidationBehavior<TRequest, TResponse>
 
             if (!validationResult.IsValid)
             {
-                var responseType = typeof(TResponse);
                 var errorMessage = "Validation failed: " + string.Join(
                     ", ",
                     validationResult.Errors.Select(e => e.ErrorMessage)
                 );
 
-                var innerType = responseType.GetGenericArguments()[0];
-                var failureMethod = typeof(Result<>)
-                    .MakeGenericType(innerType)
-                    .GetMethod(
-                        nameof(Result<object>.Failure),
-                        new[] { typeof(Errors), typeof(string) }
-                    )!;
-
-                var result = failureMethod.Invoke(null, new object?[] { Errors.Validation, errorMessage });
-                return Task.FromResult((TResponse)result!);
+                return Task.FromResult(
+                    new TResponse
+                    {
+                        Error = Errors.Validation,
+                        ErrorMessage = errorMessage
+                    }
+                );
             }
         }
 

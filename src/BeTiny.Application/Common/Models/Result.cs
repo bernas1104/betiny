@@ -7,7 +7,7 @@ namespace BeTiny.Application.Common.Models;
 /// error information if failed.
 /// </summary>
 /// <typeparam name="TResponse">The type of the value returned by the operation.</typeparam>
-public class Result<TResponse>
+public class Result<TResponse> : IResult
 {
     public TResponse? Value { get; set; }
     public Errors? Error { get; set; }
