@@ -44,8 +44,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.False(result.IsSuccess);
-        Assert.Equal(Errors.Validation, result.Error);
+        Assert.Equal(Errors.ValidationError, result.Error);
         Assert.NotNull(result.ErrorMessage);
         Assert.Contains("Validation failed", result.ErrorMessage);
         Assert.False(called);
@@ -73,7 +72,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.True(result.IsSuccess);
+        Assert.True(result.Error is null);
         Assert.True(called);
     }
 
@@ -99,7 +98,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.True(result.IsSuccess);
+        Assert.True(result.Error is null);
         Assert.True(called);
     }
 }

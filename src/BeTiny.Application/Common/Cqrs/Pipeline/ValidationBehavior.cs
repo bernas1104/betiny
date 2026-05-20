@@ -56,7 +56,7 @@ public class ValidationBehavior<TRequest, TResponse>
                 return Task.FromResult(
                     new TResponse
                     {
-                        Error = Errors.Validation,
+                        Error = Errors.ValidationError,
                         ErrorMessage = errorMessage
                     }
                 );

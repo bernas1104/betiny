@@ -1,3 +1,4 @@
+using BeTiny.Api.Filters;
 using BeTiny.IOC;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+builder.Services.AddControllers(opt => opt.Filters.Add<ResultsFilter>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterBindings(configuration);
 
@@ -21,6 +22,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(opt => opt.AllowAnyHeader()
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+);
 app.MapControllers();
 
 await app.RunAsync();

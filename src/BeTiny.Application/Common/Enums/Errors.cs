@@ -1,8 +1,10 @@
+using System.ComponentModel;
+
 namespace BeTiny.Application.Common.Enums
 {
     public enum Errors
     {
-        Validation,
-        Unexpected,
+        ValidationError,
+        UnexpectedError,
     }
 }

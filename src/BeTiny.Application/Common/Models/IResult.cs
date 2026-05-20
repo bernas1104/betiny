@@ -7,7 +7,7 @@ namespace BeTiny.Application.Common.Models;
 /// </summary>
 public interface IResult
 {
+    public object? Value { get; }
     Errors? Error { get; set; }
     string? ErrorMessage { get; set; }
-    bool IsSuccess { get; }
 }

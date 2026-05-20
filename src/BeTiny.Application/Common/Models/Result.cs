@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using BeTiny.Application.Common.Enums;
 
 namespace BeTiny.Application.Common.Models;
@@ -9,10 +10,15 @@ namespace BeTiny.Application.Common.Models;
 /// <typeparam name="TResponse">The type of the value returned by the operation.</typeparam>
 public class Result<TResponse> : IResult
 {
+    [JsonPropertyOrder(-3)]
     public TResponse? Value { get; set; }
+    object? IResult.Value => Value;
+    [JsonPropertyOrder(-2)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Errors? Error { get; set; }
+    [JsonPropertyOrder(-1)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ErrorMessage { get; set; }
-    public bool IsSuccess => Error is null;
 
     /// <summary>
     /// Creates a successful result with the specified value.
