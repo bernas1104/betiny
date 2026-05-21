@@ -41,6 +41,12 @@ public class Result<TResponse> : IResult
                 "At least one error must be provided for a failed result.",
                 nameof(errors)
             );
+            
+        if (errors.Any(e => e == null))
+            throw new ArgumentException(
+                "Error array cannot contain null elements.",
+                nameof(errors)
+            );
 
         return new Result<TResponse> { Errors = errors };
     }

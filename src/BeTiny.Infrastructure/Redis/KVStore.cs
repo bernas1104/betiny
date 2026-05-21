@@ -14,6 +14,7 @@ public class KVStore : IKVStore
 
     public async Task<long> GetNextHashSeed(CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested();
         return (await _database.StringIncrementAsync("UrlShortener:Counter")) - 1;
     }
 }
