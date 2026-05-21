@@ -38,7 +38,28 @@ public class ResultTest
         Assert.NotNull(result.Errors);
         Assert.Single(result.Errors!);
         Assert.Equal(errorType, result.Errors!.First().ErrorType);
+        Assert.Equal("PropertyName", result.Errors!.First().PropertyName);
         Assert.Equal(errorMessage, result.Errors!.First().ErrorMessage);
+        Assert.Equal(ErrorSeverity.Low, result.Errors!.First().Severity);
+    }
+
+    [Fact]
+    public void Failure_ShouldStoreMultipleErrors()
+    {
+        // Arrange
+        var error1 = new Error(ErrorTypes.ValidationError, "Prop1", "Error 1", ErrorSeverity.Low);
+        var error2 = new Error(ErrorTypes.ValidationError, "Prop2", "Error 2", ErrorSeverity.High);
+
+        // Act
+        var result = Result<string>.Failure(error1, error2);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Value);
+        Assert.NotNull(result.Errors);
+        Assert.Equal(2, result.Errors!.Count());
+        Assert.Contains(result.Errors, e => e.ErrorMessage == "Error 1");
+        Assert.Contains(result.Errors, e => e.ErrorMessage == "Error 2");
     }
 
     [Fact]
