@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Common.ValueObjects;
@@ -23,7 +24,7 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         _context.Set<TEntity>()
             .Add(entity);
 
-        return SaveChanges(ct);
+        return Task.CompletedTask;
     }
 
     public Task DeleteAsync(TEntity entity, CancellationToken ct = default)
@@ -36,7 +37,12 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<TEntity>> GetPaginatedByFilterAsync(CancellationToken ct = default)
+    public Task<IEnumerable<TEntity>> GetPaginatedByFilterAsync(
+        int pageNumber,
+        int pageSize,
+        Expression<Func<TEntity, bool>> filter,
+        CancellationToken ct = default
+    )
     {
         throw new NotImplementedException();
     }
@@ -46,7 +52,7 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         throw new NotImplementedException();
     }
 
-    private Task<int> SaveChanges(CancellationToken ct = default)
+    public Task<int> SaveChanges(CancellationToken ct = default)
     {
         return _context.SaveChangesAsync(ct);
     }

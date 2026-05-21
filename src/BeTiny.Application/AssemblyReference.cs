@@ -6,5 +6,5 @@ namespace BeTiny.Application;
 [ExcludeFromCodeCoverage]
 public sealed class AssemblyReference
 {
-    public Assembly GetAssembly() => GetType().Assembly;
+    public static Assembly Assembly => typeof(AssemblyReference).Assembly;
 }

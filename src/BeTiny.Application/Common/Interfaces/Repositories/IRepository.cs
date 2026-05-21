@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Common.ValueObjects;
 
@@ -47,8 +48,23 @@ public interface IRepository<TEntity, TId, TIdType>
     /// <summary>
     /// Retrieves a paginated list of entities based on a filter.
     /// </summary>
+    /// <param name="pageNumber">The page number.</param>
+    /// <param name="pageSize">The page size.</param>
+    /// <param name="filter">The filter expression.</param>
     /// <param name="ct">A cancellation token.</param>
     /// <returns>A task representing the asynchronous operation, containing the 
     /// paginated list of entities.</returns>
-    Task<IEnumerable<TEntity>> GetPaginatedByFilterAsync(CancellationToken ct = default);
+    Task<IEnumerable<TEntity>> GetPaginatedByFilterAsync(
+        int pageNumber,
+        int pageSize,
+        Expression<Func<TEntity, bool>> filter,
+        CancellationToken ct = default
+    );
+    /// <summary>
+    /// Saves changes made to the repository. This method should be called after
+    /// performing add, update, or delete operations to persist the changes to the data store.
+    /// </summary>
+    /// <param name="ct">A cancellation token.</param>
+    /// <returns>The number of state entries written to the underlying database.</returns>
+    Task<int> SaveChanges(CancellationToken ct = default);
 }

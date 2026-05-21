@@ -12,10 +12,8 @@ public class KVStore : IKVStore
         _database = connectionMultiplexer.GetDatabase();
     }
 
-    public async Task<long> GetNextHashSeed(CancellationToken ct = default)
+    public async Task<long> GetNextHashSeed()
     {
-        ct.ThrowIfCancellationRequested();
-
-        return (await _database.StringIncrementAsync("UrlShortner:Counter")) - 1;
+        return (await _database.StringIncrementAsync("UrlShortener:Counter")) - 1;
     }
 }

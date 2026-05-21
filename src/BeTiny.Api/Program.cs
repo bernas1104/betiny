@@ -22,10 +22,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors(opt => opt.AllowAnyHeader()
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-);
 app.MapControllers();
 
 await app.RunAsync();

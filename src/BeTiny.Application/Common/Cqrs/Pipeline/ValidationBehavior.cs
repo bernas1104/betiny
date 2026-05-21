@@ -30,7 +30,7 @@ public class ValidationBehavior<TRequest, TResponse>
     /// <param name="next">The next delegate in the pipeline.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The response from the next delegate in the pipeline.</returns>
-    public Task<TResponse> Handle(
+    public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct = default
@@ -42,8 +42,9 @@ public class ValidationBehavior<TRequest, TResponse>
 
         if (validator != null)
         {
-            var validationResult = validator.Validate(
-                new ValidationContext<object>(request)
+            var validationResult = await validator.ValidateAsync(
+                new ValidationContext<object>(request),
+                ct
             );
 
             if (!validationResult.IsValid)
@@ -53,16 +54,20 @@ public class ValidationBehavior<TRequest, TResponse>
                     validationResult.Errors.Select(e => e.ErrorMessage)
                 );
 
-                return Task.FromResult(
-                    new TResponse
-                    {
-                        Error = Errors.ValidationError,
-                        ErrorMessage = errorMessage
-                    }
-                );
+                return new TResponse
+                {
+                    Errors = validationResult.Errors.Select(
+                        e => new Error(
+                            ErrorTypes.ValidationError,
+                            e.PropertyName,
+                            e.ErrorMessage,
+                            ErrorSeverity.Low
+                        )
+                    ).ToList()
+                };
             }
         }
 
-        return next();
+        return await next(ct);
     }
 }

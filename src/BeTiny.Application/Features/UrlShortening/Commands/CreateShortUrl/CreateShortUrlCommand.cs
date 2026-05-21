@@ -46,8 +46,6 @@ public class CreateShortUrlCommand :
         CancellationToken cancellationToken
     )
     {
-        cancellationToken.ThrowIfCancellationRequested();
-
         var shortCode = await _shortCodeGenerator.GenerateShortCode();
 
         var shortUrl = new ShortUrl(
@@ -56,11 +54,12 @@ public class CreateShortUrlCommand :
         );
 
         await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
+        await _shortUrlRepository.SaveChanges(cancellationToken);
 
         _logger.LogInformation(
             "Short URL for {OriginalUrl} created: {ShortUrl}",
             command.OriginalUrl,
-            shortUrl
+            shortUrl.ShortCode
         );
 
         return Result<CreateShortUrlResponse>.Success(

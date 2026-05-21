@@ -18,13 +18,8 @@ public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateSho
     {
         RuleFor(x => x.OriginalUrl)
             .NotEmpty()
-            .Must(uri => Uri.IsWellFormedUriString(uri, UriKind.Absolute))
-            .WithMessage("The OriginalUrl must be a valid absolute URL.")
-            .Must(uri => Uri.TryCreate(uri, UriKind.Absolute, out var parsed)
-                && (
-                    parsed.Scheme.Equals(Uri.UriSchemeHttp)
-                    || parsed.Scheme.Equals(Uri.UriSchemeHttps)
-                ))
-            .WithMessage("The OriginalUrl must use HTTP or HTTPS scheme.");
+            .Must(uri => Uri.TryCreate(uri, UriKind.Absolute, out var parsed) 
+                && (parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps))
+            .WithMessage("The OriginalUrl must be a valid absolute URL using HTTP or HTTPS scheme.");
     }
 }

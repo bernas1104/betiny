@@ -39,23 +39,20 @@ public sealed class LoggingBehavior<TRequest, TResponse>
     )
     {
         _logger.LogInformation(
-            "Handling {RequestType} with content: {@Request}",
-            typeof(TRequest).Name,
-            request
+            "Starting to handle {RequestType}.",
+            typeof(TRequest).Name
         );
 
         var stopwatch = Stopwatch.StartNew();
 
-        var response = await next();
+        var response = await next(ct);
 
         stopwatch.Stop();
 
         _logger.LogInformation(
-            "Handled {RequestType} in {ElapsedMilliseconds} ms with response: "
-                + "{@Response}",
+            "Handled {RequestType} in {ElapsedMilliseconds} ms.",
             typeof(TRequest).Name,
-            stopwatch.ElapsedMilliseconds,
-            response
+            stopwatch.ElapsedMilliseconds
         );
 
         return response;

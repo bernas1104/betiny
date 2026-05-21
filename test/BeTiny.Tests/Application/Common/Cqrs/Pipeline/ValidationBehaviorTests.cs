@@ -44,9 +44,9 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.Equal(Errors.ValidationError, result.Error);
-        Assert.NotNull(result.ErrorMessage);
-        Assert.Contains("Validation failed", result.ErrorMessage);
+        Assert.NotNull(result.Errors);
+        Assert.All(result.Errors, e => Assert.Equal(ErrorTypes.ValidationError, e.ErrorType));
+        Assert.All(result.Errors, e => Assert.Contains("'Value' must not be empty.", e.ErrorMessage));
         Assert.False(called);
     }
 
@@ -72,7 +72,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.True(result.Error is null);
+        Assert.True(result.Errors is null);
         Assert.True(called);
     }
 
@@ -98,7 +98,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.True(result.Error is null);
+        Assert.True(result.Errors is null);
         Assert.True(called);
     }
 }

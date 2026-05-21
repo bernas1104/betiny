@@ -1,4 +1,3 @@
-using System.Security;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 
 namespace BeTiny.Tests.Application.Features.UrlShortening.Commands.CreateShortUrl;

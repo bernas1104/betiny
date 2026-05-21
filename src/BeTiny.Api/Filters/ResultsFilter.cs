@@ -26,7 +26,7 @@ public class ResultsFilter : IResultFilter
                 && objectResult.Value is Application.Common.Models.IResult result
         )
         {
-            if (result.Error is null)
+            if (result.IsSuccess)
             {
                 context.Result = new ObjectResult(result.Value)
                 {
@@ -36,13 +36,18 @@ public class ResultsFilter : IResultFilter
                 return;
             }
 
-            var status = GetStatusCode(result.Error.Value);
+            var status = GetStatusCode(result.Errors!.First().ErrorType);
 
             context.Result = new ObjectResult(
                 new ProblemDetails
                 {
-                    Title = result.Error.ToString(),
-                    Detail = result.ErrorMessage,
+                    Title = result.Errors!.First()
+                        .ErrorType
+                        .ToString(),
+                    Detail = string.Join(
+                        ", ",
+                        result.Errors!.Select(e => e.ErrorMessage)
+                    ),
                     Status = status,
                     Instance = context.HttpContext.Request.Path
                 }
@@ -63,12 +68,11 @@ public class ResultsFilter : IResultFilter
     /// </summary>
     /// <param name="error">The error to map.</param>
     /// <returns>The corresponding HTTP status code.</returns>
-    private static int GetStatusCode(Errors error)
+    private static int GetStatusCode(ErrorTypes errorType)
     {
-        return error switch
+        return errorType switch
         {
-            Errors.ValidationError => 400,
-            Errors.UnexpectedError => 500,
+            ErrorTypes.ValidationError => 400,
             _ => 500
         };
     }

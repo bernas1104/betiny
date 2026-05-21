@@ -1,5 +1,3 @@
-using BeTiny.Application.Common.Enums;
-
 namespace BeTiny.Application.Common.Models;
 
 /// <summary>
@@ -7,7 +5,7 @@ namespace BeTiny.Application.Common.Models;
 /// </summary>
 public interface IResult
 {
-    public object? Value { get; }
-    Errors? Error { get; set; }
-    string? ErrorMessage { get; set; }
+    object? Value { get; }
+    IReadOnlyCollection<Error>? Errors { get; init; }
+    bool IsSuccess { get; }
 }

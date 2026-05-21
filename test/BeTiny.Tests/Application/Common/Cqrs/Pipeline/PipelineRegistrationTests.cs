@@ -33,6 +33,10 @@ public class PipelineRegistrationTests
         var behaviors = ((System.Collections.IEnumerable)scope.ServiceProvider.GetRequiredService(enumerableType))
             .Cast<object>();
 
+        var behaviorTypes = behaviors.Select(b => b.GetType()).ToList();
+        
         Assert.NotEmpty(behaviors);
+        Assert.Contains(behaviorTypes, t => t.Name.Contains("ValidationBehavior"));
+        Assert.Contains(behaviorTypes, t => t.Name.Contains("LoggingBehavior"));
     }
 }

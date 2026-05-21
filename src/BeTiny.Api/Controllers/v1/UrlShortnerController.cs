@@ -6,19 +6,22 @@ namespace BeTiny.Api.Controllers.v1;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-public class UrlShortnerController : ControllerBase
+public class UrlShortenerController : ControllerBase
 {
     private readonly ISender _sender;
 
-    public UrlShortnerController(ISender sender)
+    public UrlShortenerController(ISender sender)
     {
         _sender = sender;
     }
 
     [HttpPost()]
-    public async Task<IActionResult> ShortenUrl([FromBody] CreateShortUrlRequest request)
+    public async Task<IActionResult> ShortenUrl(
+        [FromBody] CreateShortUrlRequest request,
+        CancellationToken cancellationToken
+    )
     {
-        var result = await _sender.Send(request, new CancellationToken());
+        var result = await _sender.Send(request, cancellationToken);
         return Ok(result);
     }
 }

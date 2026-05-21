@@ -11,14 +11,13 @@ namespace BeTiny.Application.Common.Models;
 public class Result<TResponse> : IResult
 {
     [JsonPropertyOrder(-3)]
-    public TResponse? Value { get; set; }
+    public TResponse? Value { get; init; }
     object? IResult.Value => Value;
     [JsonPropertyOrder(-2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public Errors? Error { get; set; }
-    [JsonPropertyOrder(-1)]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? ErrorMessage { get; set; }
+    public IReadOnlyCollection<Error>? Errors { get; init; }
+    [JsonIgnore]
+    public bool IsSuccess => Errors == null || Errors.Count == 0;
 
     /// <summary>
     /// Creates a successful result with the specified value.
@@ -31,13 +30,12 @@ public class Result<TResponse> : IResult
     }
 
     /// <summary>
-    /// Creates a failed result with the specified error and optional error message.
+    /// Creates a failed result with the specified errors.
     /// </summary>
-    /// <param name="error">The error type of the failed result.</param>
-    /// <param name="errorMessage">An optional error message providing additional details.</param>
+    /// <param name="errors">The errors of the failed result.</param>
     /// <returns>A <see cref="Result{TResponse}"/> representing a failed operation.</returns>
-    public static Result<TResponse> Failure(Errors error, string? errorMessage = null)
+    public static Result<TResponse> Failure(params Error[] errors)
     {
-        return new Result<TResponse> { Error = error, ErrorMessage = errorMessage };
+        return new Result<TResponse> { Errors = errors };
     }
 }
