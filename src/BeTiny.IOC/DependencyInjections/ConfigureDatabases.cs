@@ -1,5 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Infrastructure.Postgres.Context;
+using BeTiny.Infrastructure.Postgres.Repositories;
+using BeTiny.Infrastructure.Redis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +33,10 @@ public static class ConfigureDatabases
         services.AddSingleton<IConnectionMultiplexer>(
             sp => ConnectionMultiplexer.Connect(redisConnString)
         );
+
+        services.AddScoped<IKVStore, KVStore>();
+
+        services.AddScoped(typeof(IRepository<,,>), typeof(GenericRepository<,,>));
 
         return services;
     }

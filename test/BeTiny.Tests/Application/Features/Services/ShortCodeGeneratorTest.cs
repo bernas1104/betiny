@@ -31,7 +31,7 @@ public class ShortCodeGeneratorTest
     [Fact]
     public async Task GenerateShortCode_ThrowsWhenHashSeedIsNegative()
     {
-        kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+        kVStoreMock.Setup(kv => kv.GetNextHashSeed())
             .ReturnsAsync(-1);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
@@ -42,7 +42,7 @@ public class ShortCodeGeneratorTest
     [Fact]
     public async Task GenerateShortCode_ReturnsExpectedShortCode()
     {
-        kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+        kVStoreMock.Setup(kv => kv.GetNextHashSeed())
             .ReturnsAsync(12345);
 
         var result = await shortCodeGenerator.GenerateShortCode();
@@ -53,7 +53,7 @@ public class ShortCodeGeneratorTest
     [Fact]
     public async Task GenerateShortCode_ThrowsWhenSeedIsGreaterThanMaxValue()
     {
-        kVStoreMock.Setup(kv => kv.GetNextHashSeed(It.IsAny<CancellationToken>()))
+        kVStoreMock.Setup(kv => kv.GetNextHashSeed())
             .ReturnsAsync(MaxHashSeed + 1); // 62^7
 
         await Assert.ThrowsAsync<InvalidOperationException>(

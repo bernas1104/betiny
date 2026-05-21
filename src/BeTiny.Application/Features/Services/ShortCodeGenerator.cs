@@ -32,7 +32,7 @@ public class ShortCodeGenerator : IShortCodeGenerator
     {
         ct.ThrowIfCancellationRequested();
 
-        var hashSeed = await _kVStore.GetNextHashSeed(ct);
+        var hashSeed = await _kVStore.GetNextHashSeed();
 
         if (hashSeed < 0)
             throw new InvalidOperationException(
