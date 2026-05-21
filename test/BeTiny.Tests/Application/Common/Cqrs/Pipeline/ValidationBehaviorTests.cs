@@ -72,7 +72,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.True(result.Errors is null);
+        Assert.Null(result.Errors);
         Assert.True(called);
     }
 
@@ -98,7 +98,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.True(result.Errors is null);
+        Assert.Null(result.Errors);
         Assert.True(called);
     }
 }

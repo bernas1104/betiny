@@ -1,3 +1,4 @@
+using BeTiny.Application.Common.Cqrs.Pipeline;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Cqrs.Pipeline;
 using BeTiny.Application.Common.Models;
@@ -36,7 +37,11 @@ public class PipelineRegistrationTests
         var behaviorTypes = behaviors.Select(b => b.GetType()).ToList();
         
         Assert.NotEmpty(behaviors);
-        Assert.Contains(behaviorTypes, t => t.Name.Contains("ValidationBehavior"));
-        Assert.Contains(behaviorTypes, t => t.Name.Contains("LoggingBehavior"));
+        Assert.Contains(behaviorTypes, t => t == typeof(ValidationBehavior<,>).MakeGenericType(
+            typeof(IRequest<Result<CreateShortUrlResponse>>), 
+            typeof(Result<CreateShortUrlResponse>)));
+        Assert.Contains(behaviorTypes, t => t == typeof(LoggingBehavior<,>).MakeGenericType(
+            typeof(IRequest<Result<CreateShortUrlResponse>>), 
+            typeof(Result<CreateShortUrlResponse>)));
     }
 }

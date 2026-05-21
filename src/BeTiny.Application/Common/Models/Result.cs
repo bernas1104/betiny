@@ -36,6 +36,12 @@ public class Result<TResponse> : IResult
     /// <returns>A <see cref="Result{TResponse}"/> representing a failed operation.</returns>
     public static Result<TResponse> Failure(params Error[] errors)
     {
+        if (errors == null || errors.Length == 0)
+            throw new ArgumentException(
+                "At least one error must be provided for a failed result.",
+                nameof(errors)
+            );
+
         return new Result<TResponse> { Errors = errors };
     }
 }

@@ -44,7 +44,8 @@ public class CreateShortUrlCommandTest
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(shortCode, result.Value?.ShortUrl);
+        Assert.NotNull(result.Value);
+        Assert.Equal(shortCode, result.Value.ShortUrl);
         
         _shortUrlRepositoryMock.Verify(
             x => x.AddAsync(
