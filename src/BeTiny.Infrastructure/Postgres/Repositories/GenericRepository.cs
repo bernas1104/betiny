@@ -3,6 +3,7 @@ using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Common.ValueObjects;
 using BeTiny.Infrastructure.Postgres.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace BeTiny.Infrastructure.Postgres.Repositories;
 
@@ -27,14 +28,30 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         return Task.CompletedTask;
     }
 
+    public Task<TEntity?> GetByIdAsync(TId id, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task UpdateAsync(TEntity entity, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task DeleteAsync(TEntity entity, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<TEntity?> GetByIdAsync(TId id, CancellationToken ct = default)
+    public Task<TEntity?> GetByFilterAsync(
+        Expression<Func<TEntity, bool>> filter,
+        CancellationToken ct = default
+    )
     {
-        throw new NotImplementedException();
+        ct.ThrowIfCancellationRequested();
+
+        return _context.Set<TEntity>()
+            .FirstOrDefaultAsync(filter, ct);
     }
 
     public Task<IEnumerable<TEntity>> GetPaginatedByFilterAsync(
@@ -43,11 +60,6 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         Expression<Func<TEntity, bool>> filter,
         CancellationToken ct = default
     )
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task UpdateAsync(TEntity entity, CancellationToken ct = default)
     {
         throw new NotImplementedException();
     }
