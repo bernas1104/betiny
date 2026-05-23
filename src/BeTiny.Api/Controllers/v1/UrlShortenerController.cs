@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
+using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BeTiny.Api.Controllers.v1;
@@ -9,17 +11,16 @@ namespace BeTiny.Api.Controllers.v1;
 /// </summary>
 [ApiController]
 [Route("api/v1/[controller]")]
-public class UrlShortenerController : ControllerBase
+[ExcludeFromCodeCoverage]
+public class UrlShortenerController : Controller
 {
-    private readonly ISender _sender;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UrlShortenerController"/> class.
     /// </summary>
     /// <param name="sender">The sender used to send commands and queries.</param>
     public UrlShortenerController(ISender sender)
+        : base(sender)
     {
-        _sender = sender;
     }
 
     /// <summary>
@@ -35,6 +36,35 @@ public class UrlShortenerController : ControllerBase
     )
     {
         var result = await _sender.Send(request, cancellationToken);
-        return Ok(result);
+        return HandleResult(
+            result,
+            () => Created(
+                $"api/v1/urlshortener/{result.Value?.ShortUrl}",
+                result.Value
+            )
+        );
+    }
+
+    /// <summary>
+    /// Redirects to the original URL based on the provided short code.
+    /// </summary>
+    /// <param name="shortCode">The short code of the URL.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A redirection to the original URL if found; otherwise, an empty string.</returns>
+    [HttpGet("{shortCode}")]
+    public async Task<IActionResult> RedirectByShortCode(
+        [FromRoute] string shortCode,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _sender.Send(
+            new GetByShortCodeRequest(shortCode),
+            cancellationToken
+        );
+
+        return HandleResult(
+            result,
+            () => Redirect(result.Value?.OriginalUrl!)
+        );
     }
 }
