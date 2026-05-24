@@ -6,5 +6,6 @@ namespace BeTiny.Application.Common.Enums;
 public enum ErrorTypes
 {
     ValidationError,
-    NotFoundError
+    NotFoundError,
+    ExpiredError
 }

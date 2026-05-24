@@ -30,4 +30,10 @@ public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     }
 
     public bool IsExpired() => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
+
+    public void SetExpiration(DateTime? expiresAt)
+    {
+        if (expiresAt.HasValue)
+            ExpiresAt = expiresAt;
+    }
 }

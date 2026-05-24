@@ -40,20 +40,33 @@ public class GetByShortCodeQuery
             cancellationToken
         );
 
-        return shortUrl is null
-            ? Result<GetByShortCodeResponse>.Failure(
-                new Error(
-                    ErrorTypes.NotFoundError,
-                    null,
-                    "Short code not found.",
-                    ErrorSeverity.Medium
-                )
-            )
+        return shortUrl is null || shortUrl.IsExpired()
+            ? Result<GetByShortCodeResponse>.Failure(CreateError(shortUrl))
             : Result<GetByShortCodeResponse>.Success(
                 new GetByShortCodeResponse(
                     shortUrl.OriginalUrl,
                     shortUrl.ExpiresAt
                 )
             );
+    }
+
+    private static Error CreateError(ShortUrl? shortUrl)
+    {
+        if (shortUrl is null)
+        {
+            return new Error(
+                ErrorTypes.NotFoundError,
+                null,
+                "Short code not found.",
+                ErrorSeverity.Medium
+            );
+        }
+
+        return new Error(
+            ErrorTypes.ExpiredError,
+            null,
+            "Short code has expired.",
+            ErrorSeverity.Medium
+        );
     }
 }

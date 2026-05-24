@@ -2,12 +2,18 @@
 
 A URL shortener built as a system design exercise using **.NET 10** with Clean Architecture.
 
+## Features
+
+- Create short URLs with an optional expiration date (`expiresAt`).
+- Redirect to the original URL via the short code.
+- Expired short codes return **HTTP 410 Gone**.
+
 ## Architecture
 
 ```
 src/
 ├── BeTiny.Api          — ASP.NET Web API (entry point)
-├── BeTiny.Application  — Use cases / CQRS
+├── BeTiny.Application  — Use cases / CQRS with custom pipeline behaviors
 ├── BeTiny.Domain       — Domain entities & interfaces
 ├── BeTiny.Infrastructure — Persistence, Redis, etc.
 ├── BeTiny.IOC          — DI registration extension
@@ -32,7 +38,9 @@ Tests → (all projects)
 | Runtime        | .NET 10.0                               |
 | Database       | PostgreSQL 16 (via Npgsql + EF Core)    |
 | Cache          | Redis 7                                 |
-| Testing        | xUnit + Coverlet                        |
+| Validation     | FluentValidation                        |
+| Scanning       | Scrutor                                 |
+| Testing        | xUnit + Coverlet + Moq + Bogus          |
 | Commit hooks   | Husky + Commitlint (conventional commits) |
 
 ## Prerequisites
@@ -47,8 +55,8 @@ Tests → (all projects)
 git clone <repo-url>
 cd betiny
 
-# 2. Set up environment variables
-cp .env .env.example  # .env is already present with defaults
+# 2. Review environment variables
+# .env is already present with defaults; edit it if needed
 
 # 3. Start infrastructure (PostgreSQL + Redis)
 docker compose up -d
@@ -79,11 +87,11 @@ Connection strings are set in `appsettings.Development.json` under `ConnectionSt
 ```bash
 dotnet build                    # Build the solution
 dotnet test                     # Run all tests
-dotnet test --filter "Category=Unit"  # Filter tests by trait
+dotnet test --filter "FullyQualifiedName~Namespace.ClassName"  # Filter by class
 dotnet watch test               # Re-run tests on changes
 dotnet run --project src/BeTiny.Api   # Run the API
-docker compose up -d            # Start PostgreSQL + Redis only
-docker compose up               # Start everything (future)
+docker compose up -d            # Start PostgreSQL + Redis (detached)
+docker compose up               # Start PostgreSQL + Redis (attached)
 ```
 
 ## Database migrations
