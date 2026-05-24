@@ -3,6 +3,7 @@ using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace BeTiny.Api.Controllers.v1;
 
@@ -39,7 +40,15 @@ public class UrlShortenerController : Controller
         return HandleResult(
             result,
             () => Created(
-                $"{Request.Scheme}://{Request.Host}/api/v1/urlshortener/{result.Value!.ShortUrl}",
+                Url.Action(
+                    new UrlActionContext
+                    {
+                        Action = nameof(RedirectByShortCode),
+                        Values = new { shortCode = result.Value!.ShortUrl },
+                        Protocol = Request.Scheme,
+                        Host = Request.Host.ToString()
+                    }
+                ),
                 result.Value
             )
         );

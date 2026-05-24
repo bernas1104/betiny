@@ -23,14 +23,18 @@ public class GetByShortCodeQueryTest
     {
         // Arrange
         var shortUrl = new ShortUrl("http://example.com", "abc123");
+        Expression<Func<ShortUrl, bool>> capturedExpression = null!;
 
         _repositoryMock.Setup(
             repo => repo.GetByFilterAsync(
-                It.Is<Expression<Func<ShortUrl, bool>>>(expr => 
-                    expr.Compile()(shortUrl) == true),
+                It.IsAny<Expression<Func<ShortUrl, bool>>>(),
                 It.IsAny<CancellationToken>()
             )
-        ).ReturnsAsync(shortUrl);
+        )
+        .Callback<Expression<Func<ShortUrl, bool>>, CancellationToken>(
+            (expr, _) => capturedExpression = expr
+        )
+        .ReturnsAsync(shortUrl);
 
         var request = new GetByShortCodeRequest("abc123");
 
@@ -48,10 +52,12 @@ public class GetByShortCodeQueryTest
     public async Task Handle_ShouldReturnFailureResult_WhenShortCodeDoesNotExist()
     {
         // Arrange
+        var nonExistentShortUrl = new ShortUrl("http://example.com", "nonexistent");
+
         _repositoryMock.Setup(
             repo => repo.GetByFilterAsync(
                 It.Is<Expression<Func<ShortUrl, bool>>>(expr => 
-                    expr.Compile()(new ShortUrl("http://example.com", "nonexistent")) == true),
+                    expr.Compile()(nonExistentShortUrl) == true),
                 It.IsAny<CancellationToken>()
             )
         ).ReturnsAsync((ShortUrl?)null);
@@ -69,7 +75,7 @@ public class GetByShortCodeQueryTest
         _repositoryMock.Verify(
             repo => repo.GetByFilterAsync(
                 It.Is<Expression<Func<ShortUrl, bool>>>(expr => 
-                    expr.Compile()(new ShortUrl("http://example.com", "nonexistent")) == true),
+                    expr.Compile()(nonExistentShortUrl) == true),
                 It.IsAny<CancellationToken>()
             ),
             Times.Once
