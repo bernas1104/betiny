@@ -26,6 +26,8 @@ public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateSho
             .WithMessage("The OriginalUrl must be a valid absolute URL using HTTP or HTTPS scheme.");
 
         RuleFor(x => x.ExpiresAt)
+            .Must(dt => !dt.HasValue || dt.Value.Kind == DateTimeKind.Utc)
+            .WithMessage("The ExpiresAt must be in UTC.")
             .GreaterThan(DateTime.UtcNow)
             .When(x => x.ExpiresAt.HasValue)
             .WithMessage("The ExpiresAt must be a future date and time.");
