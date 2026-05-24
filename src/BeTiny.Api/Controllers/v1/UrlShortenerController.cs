@@ -39,7 +39,7 @@ public class UrlShortenerController : Controller
         return HandleResult(
             result,
             () => Created(
-                $"api/v1/urlshortener/{result.Value?.ShortUrl}",
+                $"{Request.Scheme}://{Request.Host}/api/v1/urlshortener/{result.Value!.ShortUrl}",
                 result.Value
             )
         );
@@ -50,7 +50,7 @@ public class UrlShortenerController : Controller
     /// </summary>
     /// <param name="shortCode">The short code of the URL.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A redirection to the original URL if found; otherwise, an empty string.</returns>
+    /// <returns>A redirection to the original URL if found; otherwise, a 404 Not Found response.</returns>
     [HttpGet("{shortCode}")]
     public async Task<IActionResult> RedirectByShortCode(
         [FromRoute] string shortCode,
@@ -64,7 +64,7 @@ public class UrlShortenerController : Controller
 
         return HandleResult(
             result,
-            () => Redirect(result.Value?.OriginalUrl!)
+            () => Redirect(result.Value!.OriginalUrl!)
         );
     }
 }

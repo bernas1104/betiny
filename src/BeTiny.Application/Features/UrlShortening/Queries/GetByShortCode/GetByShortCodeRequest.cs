@@ -26,6 +26,8 @@ public sealed class GetByShortCodeRequestValidator : AbstractValidator<GetByShor
             .NotEmpty()
             .WithMessage("Short code must not be empty.")
             .MaximumLength(7)
-            .WithMessage("Short code must not exceed 7 characters.");
+            .WithMessage("Short code must not exceed 7 characters.")
+            .Matches("^[a-zA-Z0-9]+$")
+            .WithMessage("Short code must contain only alphanumeric characters.");
     }
 }

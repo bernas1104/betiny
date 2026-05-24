@@ -7,12 +7,12 @@ using Moq;
 
 namespace BeTiny.Tests.Application.Features.UrlShortening.Queries;
 
-public class GetByShortCodeTest
+public class GetByShortCodeQueryTest
 {
     private readonly Mock<IRepository<ShortUrl, ShortUrlId, Guid>> _repositoryMock;
     private readonly GetByShortCodeQuery _query;
 
-    public GetByShortCodeTest()
+    public GetByShortCodeQueryTest()
     {
         _repositoryMock = new Mock<IRepository<ShortUrl, ShortUrlId, Guid>>();
         _query = new GetByShortCodeQuery(_repositoryMock.Object);
@@ -26,7 +26,8 @@ public class GetByShortCodeTest
 
         _repositoryMock.Setup(
             repo => repo.GetByFilterAsync(
-                It.IsAny<Expression<Func<ShortUrl, bool>>>(),
+                It.Is<Expression<Func<ShortUrl, bool>>>(expr => 
+                    expr.Compile()(shortUrl) == true),
                 It.IsAny<CancellationToken>()
             )
         ).ReturnsAsync(shortUrl);
@@ -40,6 +41,7 @@ public class GetByShortCodeTest
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal("http://example.com", result.Value.OriginalUrl);
+        Assert.Null(result.Value.ExpiresAt);
     }
 
     [Fact]
@@ -48,7 +50,8 @@ public class GetByShortCodeTest
         // Arrange
         _repositoryMock.Setup(
             repo => repo.GetByFilterAsync(
-                It.IsAny<Expression<Func<ShortUrl, bool>>>(),
+                It.Is<Expression<Func<ShortUrl, bool>>>(expr => 
+                    expr.Compile()(new ShortUrl("http://example.com", "nonexistent")) == true),
                 It.IsAny<CancellationToken>()
             )
         ).ReturnsAsync((ShortUrl?)null);
@@ -62,5 +65,14 @@ public class GetByShortCodeTest
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Errors);
         Assert.Equal("Short code not found.", result.Errors.First().ErrorMessage);
+
+        _repositoryMock.Verify(
+            repo => repo.GetByFilterAsync(
+                It.Is<Expression<Func<ShortUrl, bool>>>(expr => 
+                    expr.Compile()(new ShortUrl("http://example.com", "nonexistent")) == true),
+                It.IsAny<CancellationToken>()
+            ),
+            Times.Once
+        );
     }
 }

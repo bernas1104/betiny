@@ -35,22 +35,23 @@ public abstract class Controller : ControllerBase
             return resultMethod();
         }
 
+        var firstError = result.Errors!.First();
+        var statusCode = GetStatusCode(firstError.ErrorType);
+
         return new ObjectResult(
             new ProblemDetails
             {
-                Title = result.Errors!.First()
-                    .ErrorType
-                    .ToString(),
+                Title = firstError.ErrorType.ToString(),
                 Detail = string.Join(
                     ", ",
                     result.Errors!.Select(e => e.ErrorMessage)
                 ),
-                Status = GetStatusCode(result.Errors!.First().ErrorType),
+                Status = statusCode,
                 Instance = HttpContext.Request.Path
             }
         )
         {
-            StatusCode = GetStatusCode(result.Errors!.First().ErrorType)
+            StatusCode = statusCode
         };
     }
 
