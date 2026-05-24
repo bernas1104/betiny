@@ -48,10 +48,8 @@ public class CreateShortUrlCommand :
     {
         var shortCode = await _shortCodeGenerator.GenerateShortCode();
 
-        var shortUrl = new ShortUrl(
-            command.OriginalUrl,
-            shortCode
-        );
+        var shortUrl = new ShortUrl(command.OriginalUrl, shortCode);
+        shortUrl.SetExpiration(command.ExpiresAt);
 
         await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
         await _shortUrlRepository.SaveChanges(cancellationToken);

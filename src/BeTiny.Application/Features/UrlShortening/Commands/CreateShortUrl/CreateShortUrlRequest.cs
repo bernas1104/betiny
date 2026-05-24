@@ -8,9 +8,12 @@ namespace BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 /// Represents a request to create a short URL.
 /// </summary>
 /// <param name="OriginalUrl">The original URL to be shortened.</param>
+/// <param name="ExpiresAt">The optional expiration date and time for the short URL.</param>
 /// <returns>A response containing the shortened URL.</returns>
-public sealed record CreateShortUrlRequest(string OriginalUrl)
-    : ICommand<Result<CreateShortUrlResponse>>;
+public sealed record CreateShortUrlRequest(
+    string OriginalUrl,
+    DateTime? ExpiresAt = null
+) : ICommand<Result<CreateShortUrlResponse>>;
 
 public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateShortUrlRequest>
 {
@@ -21,5 +24,12 @@ public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateSho
             .Must(uri => Uri.TryCreate(uri, UriKind.Absolute, out var parsed) 
                 && (parsed.Scheme == Uri.UriSchemeHttp || parsed.Scheme == Uri.UriSchemeHttps))
             .WithMessage("The OriginalUrl must be a valid absolute URL using HTTP or HTTPS scheme.");
+
+        RuleFor(x => x.ExpiresAt)
+            .Must(dt => !dt.HasValue || dt.Value.Kind == DateTimeKind.Utc)
+            .WithMessage("The ExpiresAt must be in UTC.")
+            .GreaterThan(DateTime.UtcNow)
+            .When(x => x.ExpiresAt.HasValue)
+            .WithMessage("The ExpiresAt must be a future date and time.");
     }
 }

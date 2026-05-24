@@ -30,9 +30,6 @@ dotnet test --verbosity normal
 # Run a single test class
 dotnet test --filter "FullyQualifiedName~Namespace.ClassName"
 
-# Run tests matching a trait
-dotnet test --filter "Category=Unit"
-
 # Run tests in watch mode (re-run on changes)
 dotnet watch test
 
@@ -42,7 +39,7 @@ dotnet run --project src/BeTiny.Api
 # Launch infra dependencies (PostgreSQL + Redis)
 docker compose up -d
 
-# Bring up everything via docker compose
+# Bring up infra dependencies in attached mode
 docker compose up
 ```
 
@@ -73,7 +70,7 @@ The commit-msg hook runs `npx commitlint`, and the pre-commit hook runs `dotnet 
 - **var preferred** when the type is obvious (`var builder = WebApplication.CreateBuilder(args)`)
 - **Primary constructors** for simple types (`record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)`)
 - **Extension methods** in `public static` classes, with `this` parameter (`this IServiceCollection services`)
-- **`[ExcludeFromCodeCoverage]`** on DI registration, Program entry point, and other non-testable infrastructure
+- **`[ExcludeFromCodeCoverage]`** on DI registration, Program entry point, controllers, and other non-testable infrastructure
 - **PascalCase** for classes, methods, properties, public fields
 - **camelCase** for local variables, private fields
 - **No BOM** on .cs files (UTF-8 without BOM preferred)
@@ -84,12 +81,33 @@ The commit-msg hook runs `npx commitlint`, and the pre-commit hook runs `dotnet 
 
 The project follows DDD-inspired patterns with these base classes in `BeTiny.Domain.Common`:
 
-- **`Entity<TIdType>`** — base for all entities; provides `Id`, `CreatedAt`, `UpdatedAt`, `DeletedAt`
+- **`Entity<TIdType>`** — base for all entities; provides `Id`, `IsActive`, `CreatedAt`, `UpdatedAt`, `DeletedAt`
 - **`AggregateRoot<TId, TIdType>`** — extends `Entity<TId>` where `TId : AggregateRootId<TIdType>`; marks an entity as an aggregate root
 - **`ValueObject`** — base for value objects with structural equality via `GetEqualityComponents()`
 - **`AggregateRootId<TIdType>`** — extends `ValueObject`; wraps the underlying ID type (`Value` property)
 
 Concrete entities (e.g., `User : AggregateRoot<UserId, Guid>`) use a typed ID value object (e.g., `UserId : AggregateRootId<Guid>`) created via a static factory (`UserId.CreateUnique()`).
+
+### CQRS & Pipeline
+
+The project uses a **custom lightweight CQRS** implementation in `BeTiny.Application.Common.Cqrs`:
+
+- **`ISender`** — entry point for dispatching requests (`Send<TResponse>(IRequest<TResponse>, CancellationToken)`)
+- **`IRequest<TResponse>`** / **`ICommand<TResponse>`** / **`IQuery<TResponse>`** — marker interfaces for requests
+- **`IRequestHandler<TRequest, TResponse>`** — handler contract implemented by command/query handlers
+- **`IPipelineBehavior<TRequest, TResponse>`** — middleware contract for cross-cutting concerns
+
+Registered pipeline behaviors (applied in order):
+- **`ValidationBehavior`** — runs FluentValidation validators before the handler
+- **`LoggingBehavior`** — logs request execution via `ILogger<TRequest>`
+
+Handlers and behaviors are registered via Scrutor assembly scanning in `ConfigureHandlers.cs`.
+
+### Repository Pattern
+
+- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`GetByIdAsync`, `AddAsync`, `Update`, `Delete`, `SaveChanges`, etc.)
+- **`GenericRepository<TEntity, TId, TIdType>`** — EF Core implementation in Infrastructure
+- Domain entities are accessed through the generic interface; specialized repositories can extend it if needed
 
 ### EF Core Configuration
 
@@ -117,6 +135,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - Use `dotnet test --filter` to target specific tests; no custom test runner scripts
 - Coverlet is configured for code coverage
 - Use the Arrange-Act-Assert (AAA) test pattern
+- Moq is used for mocking dependencies; Bogus is available for fake data generation
 
 ### Naming Conventions
 
@@ -128,7 +147,11 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 ### Error Handling
 
-- Use the Result pattern (Success/Failure discriminated return) rather than exceptions for expected business logic failures
+- Use the Result pattern (`Result<T>` with `Error` records) rather than exceptions for expected business logic failures
+- The base `Controller` class provides `HandleResult<T>(Result<T>, Func<IActionResult>)` to map results to `IActionResult` (including `ProblemDetails` for failures)
+  - `ValidationError` → 400 Bad Request
+  - `NotFoundError` → 404 Not Found
+  - `ExpiredError` → 410 Gone
 - Exceptions reserved for truly exceptional / infrastructure failures
 - Log via `ILogger<T>` (structured logging with Serilog planned)
 
@@ -143,7 +166,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 ## VS Code / Editor
 
-- `.vscode/settings.json` is committed and should be updated for project-wide settings
+- No `.vscode/settings.json` currently committed
 - No `.editorconfig`, no `.cursorrules`, no Copilot instructions file currently exist
 - `.vscode/` and `.idea/` in `.gitignore`
 
