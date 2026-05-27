@@ -38,6 +38,8 @@ public class GetByShortCodeQueryTest
     public async Task Handle_ShouldReturnSuccessResult_WhenShortCodeExists()
     {
         // Arrange
+        var expectedCountry = _faker.Address.Country();
+
         var shortUrl = new ShortUrl("http://example.com", "abc123");
         Expression<Func<ShortUrl, bool>> capturedExpression = null!;
 
@@ -57,7 +59,7 @@ public class GetByShortCodeQueryTest
                 It.IsAny<string?>(),
                 It.IsAny<CancellationToken>()
             )
-        ).ReturnsAsync(_faker.Address.Country());
+        ).ReturnsAsync(expectedCountry);
 
         var request = new GetByShortCodeRequest(
             "abc123",
@@ -82,7 +84,8 @@ public class GetByShortCodeQueryTest
                     ce.IpAddress == "127.0.0.1" &&
                     ce.UserAgent == "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" &&
                     ce.Referer == "http://unittest.com" &&
-                    ce.DeviceType == DeviceTypes.Desktop
+                    ce.DeviceType == DeviceTypes.Desktop &&
+                    ce.Country == expectedCountry
                 ),
                 It.IsAny<CancellationToken>()
             ),

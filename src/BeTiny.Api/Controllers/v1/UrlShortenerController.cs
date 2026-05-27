@@ -66,18 +66,13 @@ public class UrlShortenerController : Controller
         CancellationToken cancellationToken
     )
     {
-        var headers = HttpContext.Request.Headers;
-        var ipAddress = headers["X-Forwarded-For"].FirstOrDefault()?
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .FirstOrDefault()
-            ?? headers["X-Real-IP"].FirstOrDefault()?.Trim()
-            ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
         
         var result = await _sender.Send(
             new GetByShortCodeRequest(
                 shortCode,
-                headers["User-Agent"].ToString(),
-                headers["Referer"].ToString(),
+                HttpContext.Request.Headers["User-Agent"].ToString(),
+                HttpContext.Request.Headers["Referer"].ToString(),
                 ipAddress
             ),
             cancellationToken
