@@ -5,5 +5,5 @@ public enum DeviceTypes
     Desktop,
     Mobile,
     Tablet,
-    Other
+    Unknown
 }
