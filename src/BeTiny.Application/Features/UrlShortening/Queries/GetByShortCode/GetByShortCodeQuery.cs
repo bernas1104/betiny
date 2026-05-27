@@ -119,8 +119,7 @@ public class GetByShortCodeQuery
         {
             _logger.LogWarning(
                 ex,
-                "Failed to resolve country for IP address: {IpAddress}",
-                ipAddress
+                "Failed to resolve country for IP address"
             );
             
             return "Unknown";
