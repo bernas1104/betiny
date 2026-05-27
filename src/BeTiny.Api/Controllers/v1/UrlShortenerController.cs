@@ -66,8 +66,15 @@ public class UrlShortenerController : Controller
         CancellationToken cancellationToken
     )
     {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        
         var result = await _sender.Send(
-            new GetByShortCodeRequest(shortCode),
+            new GetByShortCodeRequest(
+                shortCode,
+                HttpContext.Request.Headers["User-Agent"].ToString(),
+                HttpContext.Request.Headers["Referer"].ToString(),
+                ipAddress
+            ),
             cancellationToken
         );
 

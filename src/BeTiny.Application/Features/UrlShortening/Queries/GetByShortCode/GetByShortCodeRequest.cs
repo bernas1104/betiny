@@ -4,13 +4,12 @@ using FluentValidation;
 
 namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
 
-/// <summary>
-/// Request to get a URL by its short code.
-/// </summary>
-/// <param name="ShortCode">The short code of the URL.</param>
-/// <returns>The result containing the URL information.</returns>
-public sealed record GetByShortCodeRequest(string ShortCode)
-    : IRequest<Result<GetByShortCodeResponse>>;
+public sealed record GetByShortCodeRequest(
+    string ShortCode,
+    string UserAgent,
+    string Referer,
+    string? IpAddress = null
+)   : IRequest<Result<GetByShortCodeResponse>>;
 
 /// <summary>
 /// Validator for the <see cref="GetByShortCodeRequest"/> class.

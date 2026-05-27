@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using BeTiny.IOC;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterBindings(configuration);
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | 
+        ForwardedHeaders.XForwardedProto;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -20,6 +27,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.MapControllers();
 
