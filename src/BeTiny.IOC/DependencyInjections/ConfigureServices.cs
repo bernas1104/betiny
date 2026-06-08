@@ -13,6 +13,7 @@ public static class ConfigureServices
     {
         services.AddScoped<IShortCodeGenerator, ShortCodeGenerator>();
         services.AddScoped<IIpResolver, IpResolver>();
+        services.AddScoped<IDeviceDetector, DeviceDetector>();
         
         return services;
     }

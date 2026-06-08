@@ -1,5 +1,4 @@
 using BeTiny.Application.Common.Enums;
-using BeTiny.Application.Common.Helpers;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
@@ -19,6 +18,7 @@ public class GetByShortCodeQuery
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
     private readonly IRepository<ClickEvent, ClickEventId, Guid> _clickEventRepository;
     private readonly IIpResolver _ipResolver;
+    private readonly IDeviceDetector _deviceDetector;
     private readonly ILogger<GetByShortCodeQuery> _logger;
 
     /// <summary>
@@ -27,17 +27,20 @@ public class GetByShortCodeQuery
     /// <param name="shortUrlRepository">The repository for URL shortening.</param>
     /// <param name="clickEventRepository">The repository for click events.</param>
     /// <param name="ipResolver">The service for resolving IP addresses.</param>
+    /// <param name="deviceDetector">The service for detecting device types.</param>
     /// <param name="logger">The logger instance.</param>
     public GetByShortCodeQuery(
         IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
         IRepository<ClickEvent, ClickEventId, Guid> clickEventRepository,
         IIpResolver ipResolver,
+        IDeviceDetector deviceDetector,
         ILogger<GetByShortCodeQuery> logger
     )
     {
         _shortUrlRepository = shortUrlRepository;
         _clickEventRepository = clickEventRepository;
         _ipResolver = ipResolver;
+        _deviceDetector = deviceDetector;
         _logger = logger;
     }
 
@@ -73,7 +76,7 @@ public class GetByShortCodeQuery
             country,
             request.UserAgent ?? "Unknown",
             request.Referer ?? "Unknown",
-            DeviceTypeHelper.DetectDeviceType(request.UserAgent)
+            _deviceDetector.DetectDeviceType(request.UserAgent)
         );
 
         await TrySaveClickEventAsync(clickEvent, cancellationToken);

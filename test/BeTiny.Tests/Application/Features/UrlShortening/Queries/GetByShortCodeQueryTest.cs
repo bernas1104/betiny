@@ -16,6 +16,7 @@ public class GetByShortCodeQueryTest
     private readonly Mock<IRepository<ShortUrl, ShortUrlId, Guid>> _shortUrlRepositoryMock;
     private readonly Mock<IRepository<ClickEvent, ClickEventId, Guid>> _clickEventRepositoryMock;
     private readonly Mock<IIpResolver> _ipResolverMock;
+    private readonly Mock<IDeviceDetector> _deviceDetectorMock;
     private readonly Mock<ILogger<GetByShortCodeQuery>> _loggerMock = new ();
     private readonly GetByShortCodeQuery _query;
     private readonly Faker _faker = new ();
@@ -25,11 +26,13 @@ public class GetByShortCodeQueryTest
         _shortUrlRepositoryMock = new Mock<IRepository<ShortUrl, ShortUrlId, Guid>>();
         _clickEventRepositoryMock = new Mock<IRepository<ClickEvent, ClickEventId, Guid>>();
         _ipResolverMock = new Mock<IIpResolver>();
+        _deviceDetectorMock = new Mock<IDeviceDetector>();
 
         _query = new GetByShortCodeQuery(
             _shortUrlRepositoryMock.Object,
             _clickEventRepositoryMock.Object,
             _ipResolverMock.Object,
+            _deviceDetectorMock.Object,
             _loggerMock.Object
         );
     }
@@ -60,6 +63,12 @@ public class GetByShortCodeQueryTest
                 It.IsAny<CancellationToken>()
             )
         ).ReturnsAsync(expectedCountry);
+
+        _deviceDetectorMock.Setup(
+            detector => detector.DetectDeviceType(
+                It.IsAny<string?>()
+            )
+        ).Returns(DeviceTypes.Desktop);
 
         var request = new GetByShortCodeRequest(
             "abc123",
