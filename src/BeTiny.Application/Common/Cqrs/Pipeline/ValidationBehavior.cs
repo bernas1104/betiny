@@ -71,7 +71,7 @@ public class ValidationBehavior<TRequest, TResponse>
         return await next(ct);
     }
 
-    public async Task Handle(
+    public Task Handle(
         TRequest notification,
         NotificationHandlerDelegate<TResponse> next,
         CancellationToken ct = default

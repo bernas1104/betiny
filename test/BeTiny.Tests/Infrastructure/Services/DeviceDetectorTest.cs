@@ -1,7 +1,7 @@
 using BeTiny.Domain.Enums;
 using BeTiny.Infrastructure.Services;
 
-namespace BeTiny.Tests.Application.Features.Services;
+namespace BeTiny.Tests.Infrastructure.Services;
 
 public class DeviceDetectorTest
 {

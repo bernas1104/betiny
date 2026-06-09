@@ -15,7 +15,6 @@ public sealed class LoggingBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
     private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
-    private Stopwatch _stopwatch;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LoggingBehavior{TRequest, TResponse}"/> class.
@@ -24,7 +23,6 @@ public sealed class LoggingBehavior<TRequest, TResponse>
     public LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
     {
         _logger = logger;
-        _stopwatch = new Stopwatch();
     }
 
     /// <summary>
@@ -40,11 +38,12 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         CancellationToken ct = default
     )
     {
-        LogRequestStart();
+        var stopwatch = Stopwatch.StartNew();
+        LogRequestStart(stopwatch);
 
         var response = await next(ct);
 
-        LogRequestEnd();
+        LogRequestEnd(stopwatch);
 
         return response;
     }
@@ -55,31 +54,32 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         CancellationToken ct = default
     )
     {
-        LogRequestStart();
+        var stopwatch = Stopwatch.StartNew();
+        LogRequestStart(stopwatch);
 
         await next(ct);
 
-        LogRequestEnd();
+        LogRequestEnd(stopwatch);
     }
 
-    private void LogRequestStart()
+    private void LogRequestStart(Stopwatch stopwatch)
     {
         _logger.LogInformation(
             "Starting to handle {RequestType}.",
             typeof(TRequest).Name
         );
 
-        _stopwatch.Start();
+        stopwatch.Start();
     }
 
-    private void LogRequestEnd()
+    private void LogRequestEnd(Stopwatch stopwatch)
     {
-        _stopwatch.Stop();
+        stopwatch.Stop();
 
         _logger.LogInformation(
             "Handled {RequestType} in {ElapsedMilliseconds} ms.",
             typeof(TRequest).Name,
-            _stopwatch.ElapsedMilliseconds
+            stopwatch.ElapsedMilliseconds
         );
     }
 }

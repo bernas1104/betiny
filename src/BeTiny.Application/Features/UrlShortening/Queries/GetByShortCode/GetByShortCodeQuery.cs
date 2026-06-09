@@ -127,11 +127,11 @@ public class GetByShortCodeQuery
         }
     }
 
-    public ClickEvent CreateClickEvent(
+    private ClickEvent CreateClickEvent(
         ShortUrl shortUrl,
         GetByShortCodeRequest request,
         string country
-    ) => new ClickEvent(
+    ) => new (
             shortUrl.Id,
             request.IpAddress ?? "Unknown",
             country,

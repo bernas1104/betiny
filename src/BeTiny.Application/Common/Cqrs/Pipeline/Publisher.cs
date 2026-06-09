@@ -50,7 +50,7 @@ public class Publisher : IPublisher
 
                 await Task.WhenAll(tasks);
             }
-        };
+        }
     }
 
     private Task[] GetPipelineTasks<TNotification>(

@@ -12,7 +12,7 @@ public interface IPipelineBehavior<TRequest, TResponse>
     );
 
     Task Handle(
-        TRequest notification,
+        TRequest request,
         NotificationHandlerDelegate<TResponse> next,
         CancellationToken ct = default
     );

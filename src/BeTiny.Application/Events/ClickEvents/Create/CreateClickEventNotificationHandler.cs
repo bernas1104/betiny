@@ -40,7 +40,25 @@ public class CreateClickEventNotificationHandler
         CancellationToken ct = default
     )
     {
-        await _repository.AddAsync(notification.ClickEvent, ct);
-        await _repository.SaveChanges(ct);
+        try
+        {
+            await _repository.AddAsync(notification.ClickEvent, ct);
+            await _repository.SaveChanges(ct);
+
+            _logger.LogInformation(
+                "Successfully created click event with ID {ClickEventId}.",
+                notification.ClickEvent.Id
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to create click event for ShortUrl {ShortUrlId}.",
+                notification.ClickEvent.ShortUrlId
+            );
+            
+            throw;
+        }
     }
 }

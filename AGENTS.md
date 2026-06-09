@@ -101,7 +101,7 @@ The project uses a **custom lightweight CQRS** implementation in `BeTiny.Applica
 - **`IPipelineBehavior<TRequest, TResponse>`** — middleware contract for cross-cutting concerns (dual overloads for requests and notifications)
 
 Registered pipeline behaviors (applied in order):
-- **`ValidationBehavior`** — dynamically resolves `IValidator<>` via `IServiceProvider` and returns `Result<T>` with validation errors instead of throwing
+- **`ValidationBehavior`** — dynamically resolves `IValidator<>` via `IServiceProvider` and returns `Result<T>` with validation errors for requests (notification pipeline not implemented)
 - **`LoggingBehavior`** — logs start and elapsed time (ms) for request and notification execution via `ILogger<TRequest>`
 
 Handlers, behaviors, and the publisher are registered via Scrutor assembly scanning in `ConfigureHandlers.cs`.

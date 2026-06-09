@@ -17,6 +17,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | 
         ForwardedHeaders.XForwardedProto;
+    
+    // Only trust forwarded headers from known proxy/load balancer IPs
+    // Example: options.KnownProxies.Add(IPAddress.Parse("proxy-ip-here"));
+    // Or for Azure/AWS/GCP, configure KnownNetworks appropriately
 });
 
 var app = builder.Build();
