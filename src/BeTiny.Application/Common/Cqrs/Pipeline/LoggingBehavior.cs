@@ -44,7 +44,6 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         var response = await next(ct);
 
         LogRequestEnd(stopwatch);
-        stopwatch.Stop();
 
         return response;
     }
@@ -61,7 +60,6 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         await next(ct);
 
         LogRequestEnd(stopwatch);
-        stopwatch.Stop();
     }
 
     private void LogRequestStart()

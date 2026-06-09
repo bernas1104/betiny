@@ -2,6 +2,7 @@ using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Cqrs.Pipeline;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace BeTiny.Application.Common.Cqrs.Pipeline;
 
@@ -39,6 +40,23 @@ public class Publisher : IPublisher
                 .GetServices<IPipelineBehavior<IRequest<Task>, Task>>()
                 .ToArray();
 
+            await TryExecuteHandlers(
+                notification,
+                notificationHandlers,
+                pipelineBehaviors, ct
+            );
+        }
+    }
+
+    private async Task TryExecuteHandlers<TNotification>(
+        TNotification notification,
+        object?[] notificationHandlers,
+        IPipelineBehavior<IRequest<Task>, Task>[] pipelineBehaviors,
+        CancellationToken ct
+    ) where TNotification : INotification
+    {
+        try
+        {
             if (notificationHandlers.Any())
             {
                 var tasks = GetPipelineTasks(
@@ -50,6 +68,16 @@ public class Publisher : IPublisher
 
                 await Task.WhenAll(tasks);
             }
+        }
+        catch (Exception ex)
+        {
+            _serviceProvider
+                .GetRequiredService<ILogger<Publisher>>()
+                .LogError(
+                    ex,
+                    "An error occurred while handling notification of type {NotificationType}.",
+                    typeof(TNotification).Name
+                );
         }
     }
 
