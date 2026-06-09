@@ -38,12 +38,13 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         CancellationToken ct = default
     )
     {
+        LogRequestStart();
         var stopwatch = Stopwatch.StartNew();
-        LogRequestStart(stopwatch);
 
         var response = await next(ct);
 
         LogRequestEnd(stopwatch);
+        stopwatch.Stop();
 
         return response;
     }
@@ -54,22 +55,21 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         CancellationToken ct = default
     )
     {
+        LogRequestStart();
         var stopwatch = Stopwatch.StartNew();
-        LogRequestStart(stopwatch);
 
         await next(ct);
 
         LogRequestEnd(stopwatch);
+        stopwatch.Stop();
     }
 
-    private void LogRequestStart(Stopwatch stopwatch)
+    private void LogRequestStart()
     {
         _logger.LogInformation(
             "Starting to handle {RequestType}.",
             typeof(TRequest).Name
         );
-
-        stopwatch.Start();
     }
 
     private void LogRequestEnd(Stopwatch stopwatch)
