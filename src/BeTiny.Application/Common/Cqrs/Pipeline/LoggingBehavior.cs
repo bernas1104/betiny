@@ -48,20 +48,6 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         return response;
     }
 
-    public async Task Handle(
-        TRequest notification,
-        NotificationHandlerDelegate<TResponse> next,
-        CancellationToken ct = default
-    )
-    {
-        LogRequestStart();
-        var stopwatch = Stopwatch.StartNew();
-
-        await next(ct);
-
-        LogRequestEnd(stopwatch);
-    }
-
     private void LogRequestStart()
     {
         _logger.LogInformation(

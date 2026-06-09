@@ -10,18 +10,8 @@ public interface IPipelineBehavior<TRequest, TResponse>
         RequestHandlerDelegate<TResponse> next,
         CancellationToken ct = default
     );
-
-    Task Handle(
-        TRequest request,
-        NotificationHandlerDelegate<TResponse> next,
-        CancellationToken ct = default
-    );
 }
 
 public delegate Task<TResponse> RequestHandlerDelegate<TResponse>(
-    CancellationToken ct = default
-);
-
-public delegate Task NotificationHandlerDelegate<TResponse>(
     CancellationToken ct = default
 );

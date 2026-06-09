@@ -1,6 +1,6 @@
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
-using BeTiny.Application.Common.Interfaces.Cqrs.Pipeline;
+using BeTiny.Application.Common.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -36,85 +36,39 @@ public class Publisher : IPublisher
                 .GetServices(handlerType)
                 .ToArray();
 
-            var pipelineBehaviors = scope.ServiceProvider
-                .GetServices<IPipelineBehavior<IRequest<Task>, Task>>()
-                .ToArray();
-
-            await TryExecuteHandlers(
-                notification,
-                notificationHandlers,
-                pipelineBehaviors, ct
-            );
+            await TryExecuteHandlers(notificationHandlers, notification, ct);
         }
     }
 
-    private async Task TryExecuteHandlers<TNotification>(
-        TNotification notification,
+    private async Task TryExecuteHandlers(
         object?[] notificationHandlers,
-        IPipelineBehavior<IRequest<Task>, Task>[] pipelineBehaviors,
+        INotification notification,
         CancellationToken ct
-    ) where TNotification : INotification
+    )
     {
         try
         {
             if (notificationHandlers.Any())
             {
-                var tasks = GetPipelineTasks(
-                    notification,
-                    notificationHandlers,
-                    pipelineBehaviors,
-                    ct
-                );
+                var tasks = notificationHandlers
+                    .Select(async handler => {
+                        await ((dynamic)handler!).Handle((dynamic)notification, ct);
+                        return Unit.Value;
+                    });
 
                 await Task.WhenAll(tasks);
             }
         }
         catch (Exception ex)
         {
-            _serviceProvider
-                .GetRequiredService<ILogger<Publisher>>()
-                .LogError(
-                    ex,
-                    "An error occurred while handling notification of type {NotificationType}.",
-                    typeof(TNotification).Name
-                );
-        }
-    }
+            var logger = _serviceProvider
+                .GetRequiredService<ILogger<Publisher>>();
 
-    private Task[] GetPipelineTasks<TNotification>(
-        TNotification notification,
-        object?[] notificationHandlers,
-        IPipelineBehavior<IRequest<Task>, Task>[] pipelineBehaviors,
-        CancellationToken ct
-    ) where TNotification : INotification
-    {
-        if (pipelineBehaviors.Any())
-        {
-            return notificationHandlers
-                .Select(
-                    handler =>
-                    {
-                        var pipeline = pipelineBehaviors
-                            .Reverse()
-                            .Aggregate(
-                                (NotificationHandlerDelegate<Task>)
-                                    (ct => ((dynamic)handler!).Handle(notification, ct)),
-                                (next, behavior) => ct => behavior.Handle(notification, next, ct)
-                             );
-
-                        return pipeline(ct);
-                    }
-                )
-                .ToArray();    
-        }
-        else
-        {
-            return notificationHandlers
-                .Select(
-                    handler => ((INotificationHandler<TNotification>)handler!)
-                        .Handle(notification, ct)
-                )
-                .ToArray();
+            logger.LogError(
+                ex,
+                "Failed to publish notification of type {NotificationType}.",
+                notification.GetType().Name
+            );
         }
     }
 }
