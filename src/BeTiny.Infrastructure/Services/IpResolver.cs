@@ -18,7 +18,7 @@ public sealed class IpResolver : IIpResolver
         CancellationToken ct = default
     )
     {
-        _logger.LogWarning("IP geolocation not configured. Returning 'Unknown' for IP: {IpAddress}", ipAddress ?? "null");
+        _logger.LogWarning("IP geolocation not configured. Returning 'Unknown'");
 
         // Placeholder implementation - always returns "Unknown"
         return Task.FromResult("Unknown");

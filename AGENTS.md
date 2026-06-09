@@ -93,15 +93,20 @@ Concrete entities (e.g., `User : AggregateRoot<UserId, Guid>`) use a typed ID va
 The project uses a **custom lightweight CQRS** implementation in `BeTiny.Application.Common.Cqrs`:
 
 - **`ISender`** — entry point for dispatching requests (`Send<TResponse>(IRequest<TResponse>, CancellationToken)`)
+- **`IPublisher`** — entry point for fire-and-forget notifications (`Publish<TNotification>(TNotification, CancellationToken)`)
 - **`IRequest<TResponse>`** / **`ICommand<TResponse>`** / **`IQuery<TResponse>`** — marker interfaces for requests
 - **`IRequestHandler<TRequest, TResponse>`** — handler contract implemented by command/query handlers
-- **`IPipelineBehavior<TRequest, TResponse>`** — middleware contract for cross-cutting concerns
+- **`INotification`** — marker interface for pub/sub notifications (extends `IRequest<Task>`)
+- **`INotificationHandler<TNotification>`** — handler contract for side-effect notifications
+- **`IPipelineBehavior<TRequest, TResponse>`** — middleware contract for cross-cutting concerns (dual overloads for requests and notifications)
 
 Registered pipeline behaviors (applied in order):
-- **`ValidationBehavior`** — runs FluentValidation validators before the handler
-- **`LoggingBehavior`** — logs request execution via `ILogger<TRequest>`
+- **`ValidationBehavior`** — dynamically resolves `IValidator<>` via `IServiceProvider` and returns `Result<T>` with validation errors for requests (notification pipeline not implemented)
+- **`LoggingBehavior`** — logs start and elapsed time (ms) for request and notification execution via `ILogger<TRequest>`
 
-Handlers and behaviors are registered via Scrutor assembly scanning in `ConfigureHandlers.cs`.
+Handlers, behaviors, and the publisher are registered via Scrutor assembly scanning in `ConfigureHandlers.cs`.
+
+Notifications run all matching handlers in parallel via `Task.WhenAll`.
 
 ### Repository Pattern
 
@@ -163,6 +168,17 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - Default ports: PostgreSQL 5432, Redis 6379
 - DbContext registration (`BeTinyContext`) is configured via `IOC/DependencyInjections/ConfigureDatabases.cs` using `AddDbContext` + `UseNpgsql`
 - Connection strings come from `appsettings.Development.json` under `ConnectionStrings:Postgres` and `ConnectionStrings:Redis`
+
+## Services
+
+- **`IIpResolver`** / **`IpResolver`** — resolves country from IP address (currently placeholder returning `"Unknown"`)
+- **`IDeviceDetector`** / **`DeviceDetector`** — parses User-Agent strings via **UAParser** to classify devices as `Desktop`, `Mobile`, `Tablet`, or `Unknown`
+
+## IOC Registration
+
+- `ConfigureDatabases.cs` — registers `DbContext` and Redis connections
+- `ConfigureHandlers.cs` — scans and registers `IRequestHandler<>`, `INotificationHandler<>`, `ISender`, `IPublisher`, and pipeline behaviors
+- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`)
 
 ## VS Code / Editor
 

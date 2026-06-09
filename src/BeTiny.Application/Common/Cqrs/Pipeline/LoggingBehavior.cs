@@ -38,15 +38,40 @@ public sealed class LoggingBehavior<TRequest, TResponse>
         CancellationToken ct = default
     )
     {
-        _logger.LogInformation(
-            "Starting to handle {RequestType}.",
-            typeof(TRequest).Name
-        );
-
+        LogRequestStart();
         var stopwatch = Stopwatch.StartNew();
 
         var response = await next(ct);
 
+        LogRequestEnd(stopwatch);
+
+        return response;
+    }
+
+    public async Task Handle(
+        TRequest notification,
+        NotificationHandlerDelegate<TResponse> next,
+        CancellationToken ct = default
+    )
+    {
+        LogRequestStart();
+        var stopwatch = Stopwatch.StartNew();
+
+        await next(ct);
+
+        LogRequestEnd(stopwatch);
+    }
+
+    private void LogRequestStart()
+    {
+        _logger.LogInformation(
+            "Starting to handle {RequestType}.",
+            typeof(TRequest).Name
+        );
+    }
+
+    private void LogRequestEnd(Stopwatch stopwatch)
+    {
         stopwatch.Stop();
 
         _logger.LogInformation(
@@ -54,7 +79,5 @@ public sealed class LoggingBehavior<TRequest, TResponse>
             typeof(TRequest).Name,
             stopwatch.ElapsedMilliseconds
         );
-
-        return response;
     }
 }

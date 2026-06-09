@@ -41,6 +41,7 @@ Tests → (all projects)
 | Cache          | Redis 7                                 |
 | Validation     | FluentValidation                        |
 | Scanning       | Scrutor                                 |
+| Device parsing | UAParser                                |
 | Testing        | xUnit + Coverlet + Moq + Bogus          |
 | Commit hooks   | Husky + Commitlint (conventional commits) |
 
