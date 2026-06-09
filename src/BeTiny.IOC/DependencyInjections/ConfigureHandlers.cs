@@ -30,6 +30,18 @@ public static class ConfigureHandlers
                 )
                 .AsImplementedInterfaces()
                 .WithScopedLifetime()
+                .AddClasses(
+                    classes => classes.AssignableTo(typeof(INotificationHandler<>)),
+                    publicOnly: false
+                )
+                .AsImplementedInterfaces()
+                .WithScopedLifetime()
+                .AddClasses(
+                    classes => classes.AssignableTo(typeof(IPublisher)),
+                    publicOnly: false
+                )
+                .AsImplementedInterfaces()
+                .WithScopedLifetime()
         );
 
         return services;

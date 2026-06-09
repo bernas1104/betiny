@@ -1,8 +1,10 @@
 using BeTiny.Application.Common.Enums;
+using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
+using BeTiny.Application.Events.ClickEvents.Create;
 using BeTiny.Domain.Entities;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
@@ -16,31 +18,31 @@ public class GetByShortCodeQuery
     : IRequestHandler<GetByShortCodeRequest, Result<GetByShortCodeResponse>>
 {
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
-    private readonly IRepository<ClickEvent, ClickEventId, Guid> _clickEventRepository;
     private readonly IIpResolver _ipResolver;
     private readonly IDeviceDetector _deviceDetector;
+    private readonly IPublisher _publisher;
     private readonly ILogger<GetByShortCodeQuery> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetByShortCodeQuery"/> class.
     /// </summary>
     /// <param name="shortUrlRepository">The repository for URL shortening.</param>
-    /// <param name="clickEventRepository">The repository for click events.</param>
     /// <param name="ipResolver">The service for resolving IP addresses.</param>
     /// <param name="deviceDetector">The service for detecting device types.</param>
+    /// <param name="publisher">The publisher for notifications.</param>
     /// <param name="logger">The logger instance.</param>
     public GetByShortCodeQuery(
         IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
-        IRepository<ClickEvent, ClickEventId, Guid> clickEventRepository,
         IIpResolver ipResolver,
         IDeviceDetector deviceDetector,
+        IPublisher publisher,
         ILogger<GetByShortCodeQuery> logger
     )
     {
         _shortUrlRepository = shortUrlRepository;
-        _clickEventRepository = clickEventRepository;
         _ipResolver = ipResolver;
         _deviceDetector = deviceDetector;
+        _publisher = publisher;
         _logger = logger;
     }
 
@@ -70,16 +72,12 @@ public class GetByShortCodeQuery
             cancellationToken
         );
 
-        var clickEvent = new ClickEvent(
-            shortUrl.Id,
-            request.IpAddress ?? "Unknown",
-            country,
-            request.UserAgent ?? "Unknown",
-            request.Referer ?? "Unknown",
-            _deviceDetector.DetectDeviceType(request.UserAgent)
-        );
+        var clickEvent = CreateClickEvent(shortUrl, request, country);
 
-        await TrySaveClickEventAsync(clickEvent, cancellationToken);
+        await _publisher.Publish(
+            new CreateClickEventNotification(clickEvent),
+            cancellationToken
+        );
 
         return Result<GetByShortCodeResponse>.Success(
             new GetByShortCodeResponse(
@@ -129,23 +127,16 @@ public class GetByShortCodeQuery
         }
     }
 
-    private async Task TrySaveClickEventAsync(
-        ClickEvent clickEvent,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            await _clickEventRepository.AddAsync(clickEvent, cancellationToken);
-            await _clickEventRepository.SaveChanges(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                "Failed to save click event for ShortUrlId: {ShortUrlId}",
-                clickEvent.ShortUrlId
-            );
-        }
-    }
+    public ClickEvent CreateClickEvent(
+        ShortUrl shortUrl,
+        GetByShortCodeRequest request,
+        string country
+    ) => new ClickEvent(
+            shortUrl.Id,
+            request.IpAddress ?? "Unknown",
+            country,
+            request.UserAgent ?? "Unknown",
+            request.Referer ?? "Unknown",
+            _deviceDetector.DetectDeviceType(request.UserAgent)
+        );
 }
