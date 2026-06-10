@@ -10,14 +10,17 @@ namespace BeTiny.Application.Common.Cqrs;
 public class Publisher : IPublisher
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<Publisher> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Publisher"/> class with
     /// the specified service provider.
     /// </summary> <param name="serviceProvider">The service provider to resolve dependencies.</param>
-    public Publisher(IServiceProvider serviceProvider)
+    /// <param name="logger">The logger to log errors.</param>
+    public Publisher(IServiceProvider serviceProvider, ILogger<Publisher> logger)
     {
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
@@ -53,22 +56,22 @@ public class Publisher : IPublisher
                 var tasks = notificationHandlers
                     .Select(async handler => {
                         await ((dynamic)handler!).Handle((dynamic)notification, ct);
-                        return Unit.Value;
                     });
 
-                await Task.WhenAll(tasks);
+                Task.WaitAll(tasks);
             }
         }
-        catch (Exception ex)
+        catch (AggregateException ex)
         {
-            var logger = _serviceProvider
-                .GetRequiredService<ILogger<Publisher>>();
-
-            logger.LogError(
-                ex,
-                "Failed to publish notification of type {NotificationType}.",
-                notification.GetType().Name
-            );
+            ex.InnerExceptions
+                .ToList()
+                .ForEach(
+                    innerEx => _logger.LogError(
+                        innerEx,
+                        "Failed to handle notification of type {NotificationType}.",
+                        notification.GetType().Name
+                    )
+                );
         }
     }
 }

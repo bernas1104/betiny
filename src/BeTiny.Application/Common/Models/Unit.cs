@@ -1,6 +1,6 @@
 namespace BeTiny.Application.Common.Models;
 
-public class Unit
+public readonly struct Unit
 {
-    public static readonly Unit Value = new();
+    public static readonly Unit Value = default;
 }
