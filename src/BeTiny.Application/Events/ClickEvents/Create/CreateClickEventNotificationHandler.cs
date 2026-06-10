@@ -1,6 +1,5 @@
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Repositories;
-using BeTiny.Application.Common.Models;
 using BeTiny.Domain.Entities;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;

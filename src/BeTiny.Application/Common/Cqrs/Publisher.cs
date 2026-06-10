@@ -1,6 +1,5 @@
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
-using BeTiny.Application.Common.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -56,7 +55,8 @@ public class Publisher : IPublisher
                 var tasks = notificationHandlers
                     .Select(async handler => {
                         await ((dynamic)handler!).Handle((dynamic)notification, ct);
-                    });
+                    })
+                    .ToArray();
 
                 Task.WaitAll(tasks);
             }
