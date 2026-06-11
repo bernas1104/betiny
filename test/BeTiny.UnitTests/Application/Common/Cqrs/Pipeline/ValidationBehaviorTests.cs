@@ -4,9 +4,8 @@ using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Cqrs.Pipeline;
 using BeTiny.Application.Common.Models;
 using FluentValidation;
-using Moq;
 
-namespace BeTiny.Tests.Application.Common.Cqrs.Pipeline;
+namespace BeTiny.UnitTests.Application.Common.Cqrs.Pipeline;
 
 public sealed record DummyRequest(string Value) : ICommand<Result<DummyResponse>>;
 
@@ -25,13 +24,13 @@ public class ValidationBehaviorTests
     [Fact]
     public async Task Handle_InvalidRequest_ReturnsValidationFailure()
     {
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock
-            .Setup(sp => sp.GetService(typeof(IValidator<DummyRequest>)))
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        serviceProvider
+            .GetService(typeof(IValidator<DummyRequest>))
             .Returns(new DummyRequestValidator());
 
         var behavior = new ValidationBehavior<DummyRequest, Result<DummyResponse>>(
-            serviceProviderMock.Object
+            serviceProvider
         );
 
         var request = new DummyRequest(string.Empty);
@@ -44,22 +43,22 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.NotNull(result.Errors);
-        Assert.All(result.Errors, e => Assert.Equal(ErrorTypes.ValidationError, e.ErrorType));
-        Assert.All(result.Errors, e => Assert.Contains("'Value' must not be empty.", e.ErrorMessage));
-        Assert.False(called);
+        result.Errors.Should().NotBeNull();
+        result.Errors.Should().AllSatisfy(e => e.ErrorType.Should().Be(ErrorTypes.ValidationError));
+        result.Errors.Should().AllSatisfy(e => e.ErrorMessage.Should().Contain("'Value' must not be empty."));
+        called.Should().BeFalse();
     }
 
     [Fact]
     public async Task Handle_ValidRequest_PassesThrough()
     {
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock
-            .Setup(sp => sp.GetService(typeof(IValidator<DummyRequest>)))
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        serviceProvider
+            .GetService(typeof(IValidator<DummyRequest>))
             .Returns(new DummyRequestValidator());
 
         var behavior = new ValidationBehavior<DummyRequest, Result<DummyResponse>>(
-            serviceProviderMock.Object
+            serviceProvider
         );
 
         var request = new DummyRequest("valid");
@@ -72,20 +71,20 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.Null(result.Errors);
-        Assert.True(called);
+        result.Errors.Should().BeNull();
+        called.Should().BeTrue();
     }
 
     [Fact]
     public async Task Handle_NoValidator_PassesThrough()
     {
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock
-            .Setup(sp => sp.GetService(typeof(IValidator<DummyRequest>)))
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        serviceProvider
+            .GetService(typeof(IValidator<DummyRequest>))
             .Returns(default(IValidator<DummyRequest>?)!);
 
         var behavior = new ValidationBehavior<DummyRequest, Result<DummyResponse>>(
-            serviceProviderMock.Object
+            serviceProvider
         );
 
         var request = new DummyRequest(string.Empty);
@@ -98,7 +97,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        Assert.Null(result.Errors);
-        Assert.True(called);
+        result.Errors.Should().BeNull();
+        called.Should().BeTrue();
     }
 }

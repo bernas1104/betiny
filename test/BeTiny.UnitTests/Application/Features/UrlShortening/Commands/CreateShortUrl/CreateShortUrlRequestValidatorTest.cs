@@ -1,6 +1,6 @@
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 
-namespace BeTiny.Tests.Application.Features.UrlShortening.Commands.CreateShortUrl;
+namespace BeTiny.UnitTests.Application.Features.UrlShortening.Commands.CreateShortUrl;
 
 public class CreateShortUrlRequestValidatorTest
 {
@@ -15,7 +15,7 @@ public class CreateShortUrlRequestValidatorTest
 
         var result = _validator.Validate(request);
 
-        Assert.True(result.IsValid);
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -25,11 +25,8 @@ public class CreateShortUrlRequestValidatorTest
 
         var result = _validator.Validate(request);
 
-        Assert.False(result.IsValid);
-        Assert.Contains(
-            result.Errors,
-            e => e.PropertyName == nameof(CreateShortUrlRequest.OriginalUrl)
-        );
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.OriginalUrl));
     }
 
     [Theory]
@@ -46,10 +43,7 @@ public class CreateShortUrlRequestValidatorTest
 
         var result = _validator.Validate(request);
 
-        Assert.False(result.IsValid);
-        Assert.Contains(
-            result.Errors,
-            e => e.PropertyName == nameof(CreateShortUrlRequest.OriginalUrl)
-        );
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.OriginalUrl));
     }
 }

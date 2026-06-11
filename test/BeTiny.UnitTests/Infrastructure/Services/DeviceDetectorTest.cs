@@ -1,7 +1,7 @@
 using BeTiny.Domain.Enums;
 using BeTiny.Infrastructure.Services;
 
-namespace BeTiny.Tests.Infrastructure.Services;
+namespace BeTiny.UnitTests.Infrastructure.Services;
 
 public class DeviceDetectorTest
 {
@@ -12,7 +12,7 @@ public class DeviceDetectorTest
     {
         var result = _deviceDetector.DetectDeviceType(null);
 
-        Assert.Equal(DeviceTypes.Unknown, result);
+        result.Should().Be(DeviceTypes.Unknown);
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class DeviceDetectorTest
     {
         var result = _deviceDetector.DetectDeviceType(string.Empty);
 
-        Assert.Equal(DeviceTypes.Unknown, result);
+        result.Should().Be(DeviceTypes.Unknown);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class DeviceDetectorTest
     {
         var result = _deviceDetector.DetectDeviceType("   ");
 
-        Assert.Equal(DeviceTypes.Unknown, result);
+        result.Should().Be(DeviceTypes.Unknown);
     }
 
     [Theory]
@@ -39,7 +39,7 @@ public class DeviceDetectorTest
     {
         var result = _deviceDetector.DetectDeviceType(userAgent);
 
-        Assert.Equal(expected, result);
+        result.Should().Be(expected);
     }
 
     [Theory]
@@ -49,7 +49,7 @@ public class DeviceDetectorTest
     {
         var result = _deviceDetector.DetectDeviceType(userAgent);
 
-        Assert.Equal(expected, result);
+        result.Should().Be(expected);
     }
 
     [Theory]
@@ -59,7 +59,7 @@ public class DeviceDetectorTest
     {
         var result = _deviceDetector.DetectDeviceType(userAgent);
 
-        Assert.Equal(expected, result);
+        result.Should().Be(expected);
     }
 
     [Theory]
@@ -69,6 +69,6 @@ public class DeviceDetectorTest
     {
         var result = _deviceDetector.DetectDeviceType(userAgent);
 
-        Assert.Equal(expected, result);
+        result.Should().Be(expected);
     }
 }

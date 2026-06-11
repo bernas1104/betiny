@@ -7,6 +7,7 @@
     <Project Path="src/BeTiny.IOC/BeTiny.IOC.csproj" />
   </Folder>
   <Folder Name="/test/">
-    <Project Path="test/BeTiny.Tests/BeTiny.Tests.csproj" />
+    <Project Path="test/BeTiny.UnitTests/BeTiny.UnitTests.csproj" />
+    <Project Path="test/BeTiny.IntegrationTests/BeTiny.IntegrationTests.csproj" />
   </Folder>
 </Solution>

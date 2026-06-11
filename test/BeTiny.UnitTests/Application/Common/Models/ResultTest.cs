@@ -1,7 +1,7 @@
 using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Models;
 
-namespace BeTiny.Tests.Application.Common.Models;
+namespace BeTiny.UnitTests.Application.Common.Models;
 
 public class ResultTest
 {
@@ -15,9 +15,9 @@ public class ResultTest
         var result = Result<string>.Success(expectedValue);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Equal(expectedValue, result.Value);
-        Assert.Null(result.Errors);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(expectedValue);
+        result.Errors.Should().BeNull();
     }
 
     [Fact]
@@ -33,14 +33,14 @@ public class ResultTest
         );
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Errors);
-        Assert.Single(result.Errors!);
-        Assert.Equal(errorType, result.Errors!.First().ErrorType);
-        Assert.Equal("PropertyName", result.Errors!.First().PropertyName);
-        Assert.Equal(errorMessage, result.Errors!.First().ErrorMessage);
-        Assert.Equal(ErrorSeverity.Low, result.Errors!.First().Severity);
+        result.IsSuccess.Should().BeFalse();
+        result.Value.Should().BeNull();
+        result.Errors.Should().NotBeNull();
+        result.Errors.Should().ContainSingle();
+        result.Errors!.First().ErrorType.Should().Be(errorType);
+        result.Errors!.First().PropertyName.Should().Be("PropertyName");
+        result.Errors!.First().ErrorMessage.Should().Be(errorMessage);
+        result.Errors!.First().Severity.Should().Be(ErrorSeverity.Low);
     }
 
     [Fact]
@@ -54,32 +54,35 @@ public class ResultTest
         var result = Result<string>.Failure(error1, error2);
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Errors);
-        Assert.Equal(2, result.Errors!.Count());
-        Assert.Contains(result.Errors, e => e.ErrorMessage == "Error 1");
-        Assert.Contains(result.Errors, e => e.ErrorMessage == "Error 2");
+        result.IsSuccess.Should().BeFalse();
+        result.Value.Should().BeNull();
+        result.Errors.Should().NotBeNull();
+        result.Errors.Should().HaveCount(2);
+        result.Errors.Should().Contain(e => e.ErrorMessage == "Error 1");
+        result.Errors.Should().Contain(e => e.ErrorMessage == "Error 2");
     }
 
     [Fact]
     public void Failure_ThrowsWhenErrorsNull()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => Result<string>.Failure(null!));
+        Action act = () => Result<string>.Failure(null!);
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void Failure_ThrowsWhenErrorsEmpty()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => Result<string>.Failure(Array.Empty<Error>()));
+        Action act = () => Result<string>.Failure(Array.Empty<Error>());
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void Failure_ThrowsWhenErrorsContainNull()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => Result<string>.Failure([ null! ]));
+        Action act = () => Result<string>.Failure([ null! ]);
+        act.Should().Throw<ArgumentException>();
     }
 }

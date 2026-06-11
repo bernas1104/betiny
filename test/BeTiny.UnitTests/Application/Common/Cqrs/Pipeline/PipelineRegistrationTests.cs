@@ -8,7 +8,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace BeTiny.Tests.Application.Common.Cqrs.Pipeline;
+namespace BeTiny.UnitTests.Application.Common.Cqrs.Pipeline;
 
 public class PipelineRegistrationTests
 {
@@ -35,13 +35,13 @@ public class PipelineRegistrationTests
             .Cast<object>();
 
         var behaviorTypes = behaviors.Select(b => b.GetType()).ToList();
-        
-        Assert.NotEmpty(behaviors);
-        Assert.Contains(behaviorTypes, t => t == typeof(ValidationBehavior<,>).MakeGenericType(
-            typeof(IRequest<Result<CreateShortUrlResponse>>), 
+
+        behaviors.Should().NotBeEmpty();
+        behaviorTypes.Should().Contain(t => t == typeof(ValidationBehavior<,>).MakeGenericType(
+            typeof(IRequest<Result<CreateShortUrlResponse>>),
             typeof(Result<CreateShortUrlResponse>)));
-        Assert.Contains(behaviorTypes, t => t == typeof(LoggingBehavior<,>).MakeGenericType(
-            typeof(IRequest<Result<CreateShortUrlResponse>>), 
+        behaviorTypes.Should().Contain(t => t == typeof(LoggingBehavior<,>).MakeGenericType(
+            typeof(IRequest<Result<CreateShortUrlResponse>>),
             typeof(Result<CreateShortUrlResponse>)));
     }
 }
