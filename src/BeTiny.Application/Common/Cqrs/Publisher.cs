@@ -59,6 +59,12 @@ public class Publisher : IPublisher
                     .ToArray();
 
                 Task.WaitAll(tasks);
+
+                _logger.LogInformation(
+                    "Successfully handled notification of type {NotificationType} with {HandlerCount} handlers.",
+                    notification.GetType().Name,
+                    notificationHandlers.Length
+                );
             }
         }
         catch (AggregateException ex)

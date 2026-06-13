@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 
@@ -10,6 +11,7 @@ public class ShortCodeGenerator : IShortCodeGenerator
     private readonly IKVStore _kVStore;
 
     #if DEBUG
+    [ExcludeFromCodeCoverage]
     static ShortCodeGenerator()
     {
         if (

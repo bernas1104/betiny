@@ -6,9 +6,11 @@ using BeTiny.Application.Events.ClickEvents.Create;
 using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
 using BeTiny.Domain.Entities;
 using BeTiny.Domain.Enums;
+using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Bogus;
 using Microsoft.Extensions.Logging;
+using NSubstitute.ExceptionExtensions;
 
 namespace BeTiny.UnitTests.Application.Features.UrlShortening.Queries;
 
@@ -93,6 +95,47 @@ public class GetByShortCodeQueryTest
     }
 
     [Fact]
+    public async Task Handle_ShouldReturnSuccessResult_WhenIpResolverFails()
+    {
+        // Arrange
+        var shortUrl = new ShortUrl("http://example.com", "abc123");
+
+        _shortUrlRepository.GetByFilterAsync(
+            Arg.Any<Expression<Func<ShortUrl, bool>>>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(shortUrl);
+
+        _ipResolver.GetCountryByIpAsync(
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>()
+        ).ThrowsAsync(new Exception("IP resolution failed"));
+
+        var request = new GetByShortCodeRequest(
+            "abc123",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "http://unittest.com",
+            "127.0.0.1"
+        );
+
+        // Act
+        var result = await _query.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.OriginalUrl.Should().Be("http://example.com");
+        result.Value.ExpiresAt.Should().BeNull();
+
+        await _publisher.Received(1).Publish(
+            Arg.Is<CreateClickEventNotification>(n =>
+                n.ClickEvent.ShortUrlId == shortUrl.Id &&
+                n.ClickEvent.Country == "Unknown"
+            ),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
     public async Task Handle_ShouldReturnFailureResult_WhenShortCodeDoesNotExist()
     {
         // Arrange
@@ -117,6 +160,46 @@ public class GetByShortCodeQueryTest
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().NotBeNull();
         result.Errors!.First().ErrorMessage.Should().Be("Short code not found.");
+
+        await _shortUrlRepository.Received(1).GetByFilterAsync(
+            Arg.Any<Expression<Func<ShortUrl, bool>>>(),
+            Arg.Any<CancellationToken>()
+        );
+
+        await _publisher.DidNotReceive().Publish(
+            Arg.Any<CreateClickEventNotification>(),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnFailureResult_WhenShortCodeIsExpired()
+    {
+        // Arrange
+        var expiredShortUrl = new ShortUrl("http://example.com", "expired");
+        
+        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
+        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow.AddDays(-1));
+        
+        expiredShortUrl.SetExpiration(DateTime.UtcNow.AddMinutes(-10), dateTimeProvider);
+
+        _shortUrlRepository.GetByFilterAsync(
+            Arg.Any<Expression<Func<ShortUrl, bool>>>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(expiredShortUrl);
+
+        var request = new GetByShortCodeRequest(
+            "expired",
+            "UnitTestAgent",
+            "http://unittest.com",
+            "127.0.0.1"
+        );
+
+        var result = await _query.Handle(request, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().NotBeNull();
+        result.Errors!.First().ErrorMessage.Should().Be("Short code has expired.");
 
         await _shortUrlRepository.Received(1).GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),

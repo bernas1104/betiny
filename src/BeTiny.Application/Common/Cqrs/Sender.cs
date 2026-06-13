@@ -35,8 +35,11 @@ namespace BeTiny.Application.Common.Cqrs
                 var requestHandler = scope.ServiceProvider
                     .GetRequiredService(handlerType);
 
+                var behaviorType = typeof(IPipelineBehavior<,>)
+                    .MakeGenericType(requestType, typeof(TResponse));
+
                 var pipelineBehaviors = scope.ServiceProvider
-                    .GetServices<IPipelineBehavior<IRequest<TResponse>, TResponse>>();
+                    .GetServices(behaviorType);
 
                 if (pipelineBehaviors.Any())
                 {
@@ -45,7 +48,7 @@ namespace BeTiny.Application.Common.Cqrs
                         .Aggregate(
                             (RequestHandlerDelegate<TResponse>)
                                 (ct => ((dynamic)requestHandler).Handle((dynamic)request, ct)),
-                            (next, behavior) => ct => behavior.Handle(request, next, ct)
+                            (next, behavior) => ct => ((dynamic)behavior!).Handle((dynamic)request, next, ct)
                         );
 
                     return await pipeline(ct);
