@@ -1,4 +1,5 @@
 using BeTiny.Domain.Common.Entities;
+using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 
 namespace BeTiny.Domain.Entities;
@@ -31,7 +32,7 @@ public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
 
     public bool IsExpired() => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
 
-    public void SetExpiration(DateTime? expiresAt)
+    public void SetExpiration(DateTime? expiresAt, IDateTimeProvider dateTimeProvider)
     {
         if (expiresAt.HasValue)
         {
@@ -41,7 +42,7 @@ public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
                     nameof(expiresAt)
                 );
 
-            if (expiresAt.Value <= DateTime.UtcNow)
+            if (expiresAt.Value <= dateTimeProvider.UtcNow)
                 throw new ArgumentException(
                     "The ExpiresAt must be a future date and time.",
                     nameof(expiresAt)
