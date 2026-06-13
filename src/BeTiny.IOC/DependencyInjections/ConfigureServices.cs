@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Features.Services;
 using BeTiny.Domain.Interfaces;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BeTiny.IOC.DependencyInjections;
 
+[ExcludeFromCodeCoverage]
 public static class ConfigureServices
 {
     public static IServiceCollection RegisterServices(

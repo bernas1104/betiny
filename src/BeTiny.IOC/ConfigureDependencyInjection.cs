@@ -1,7 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using BeTiny.Application.Common.Interfaces.Repositories;
-using BeTiny.Application.Common.Interfaces.Services;
-using BeTiny.Application.Features.Services;
 using BeTiny.IOC.DependencyInjections;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
