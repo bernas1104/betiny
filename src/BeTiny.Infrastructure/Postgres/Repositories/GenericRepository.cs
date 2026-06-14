@@ -28,21 +28,6 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         return Task.CompletedTask;
     }
 
-    public Task<TEntity?> GetByIdAsync(TId id, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task UpdateAsync(TEntity entity, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task DeleteAsync(TEntity entity, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task<TEntity?> GetByFilterAsync(
         Expression<Func<TEntity, bool>> filter,
         CancellationToken ct = default
@@ -52,16 +37,6 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
 
         return _context.Set<TEntity>()
             .FirstOrDefaultAsync(filter, ct);
-    }
-
-    public Task<IEnumerable<TEntity>> GetPaginatedByFilterAsync(
-        int pageNumber,
-        int pageSize,
-        Expression<Func<TEntity, bool>> filter,
-        CancellationToken ct = default
-    )
-    {
-        throw new NotImplementedException();
     }
 
     public Task<int> SaveChanges(CancellationToken ct = default)

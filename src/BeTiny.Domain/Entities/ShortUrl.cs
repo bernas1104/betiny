@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
@@ -14,6 +15,7 @@ public sealed class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     public IReadOnlyList<ClickEvent> ClickEvents { get; private set; }
 
     #pragma warning disable CS8618
+    [ExcludeFromCodeCoverage]
     // Private empty constructor needed by EF Core
     private ShortUrl()
     {
