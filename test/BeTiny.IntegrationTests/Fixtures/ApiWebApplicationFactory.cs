@@ -1,4 +1,3 @@
-using BeTiny.IntegrationTests.Fixtures;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
