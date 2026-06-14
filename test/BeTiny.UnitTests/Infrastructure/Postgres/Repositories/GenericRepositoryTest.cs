@@ -18,7 +18,7 @@ public sealed class GenericRepositoryTest
     }
 
     [Fact]
-    public async Task GetByFilterAsync_ShouldReturnEntity_WhenEntityMatchesFilter()
+    public async Task GetByFilterAsync_WhenEntityMatchesFilter_ShouldReturnEntity()
     {
         var shortUrl = new ShortUrl("https://example.com", "foo");
 
@@ -27,20 +27,20 @@ public sealed class GenericRepositoryTest
 
         var result = await _repository.GetByFilterAsync(e => e.ShortCode == "foo");
 
-        Assert.NotNull(result);
-        Assert.Equal("foo", result!.ShortCode);
+        result.Should().NotBeNull();
+        result!.ShortCode.Should().Be("foo");
     }
 
     [Fact]
-    public async Task GetByFilterAsync_ShouldReturnNull_WhenNoEntityMatchesFilter()
+    public async Task GetByFilterAsync_WhenNoEntityMatchesFilter_ShouldReturnNull()
     {
         var result = await _repository.GetByFilterAsync(e => e.ShortCode == "nonexistent");
 
-        Assert.Null(result);
+        result.Should().BeNull();
     }
 
     [Fact]
-    public async Task AddAsync_ShouldAddEntityToContext()
+    public async Task AddAsync_WhenCalled_ShouldAddEntityToContext()
     {
         var shortUrl = new ShortUrl("https://example.com", "bar");
 
@@ -49,7 +49,7 @@ public sealed class GenericRepositoryTest
 
         var result = _context.ShortUrls.FirstOrDefault(e => e.ShortCode == "bar");
 
-        Assert.NotNull(result);
-        Assert.Equal("bar", result!.ShortCode);
+        result.Should().NotBeNull();
+        result!.ShortCode.Should().Be("bar");
     }
 }

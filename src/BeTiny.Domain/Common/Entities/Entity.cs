@@ -21,6 +21,6 @@ public abstract class Entity<TIdType>
     public Entity(TIdType id)
     {
         Id = id;
-        CreatedAt = DateTime.Now;
+        CreatedAt = DateTime.UtcNow;
     }
 }

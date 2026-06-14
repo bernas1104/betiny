@@ -37,6 +37,7 @@ public class GetByShortUrlRequestValidatorTest
         var result = _validator.Validate(request);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Count.Should().NotBe(0);
+        result.Errors.Should()
+            .Contain(e => e.PropertyName == nameof(GetByShortCodeRequest.ShortCode));
     }
 }

@@ -13,7 +13,7 @@ public sealed class DateTimeProviderTest
     }
 
     [Fact]
-    public void UtcNow_Should_Return_Current_Utc_DateTime()
+    public void UtcNow_WhenCalled_ShouldReturnCurrentUtcDateTime()
     {
         // Arrange
         var expected = DateTime.UtcNow;
@@ -22,6 +22,7 @@ public sealed class DateTimeProviderTest
         var actual = _dateTimeProvider.UtcNow;
 
         // Assert
-        Assert.True((actual - expected).TotalSeconds < 1, "UtcNow should return the current UTC DateTime.");
+        (actual - expected).TotalSeconds.Should()
+            .BeLessThan(1, "UtcNow should return the current UTC DateTime.");
     }
 }

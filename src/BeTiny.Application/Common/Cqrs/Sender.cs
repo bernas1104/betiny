@@ -3,8 +3,8 @@ using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Cqrs.Pipeline;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BeTiny.Application.Common.Cqrs
-{
+namespace BeTiny.Application.Common.Cqrs;
+
     /// <inheritdoc/>
     public class Sender : ISender
     {
@@ -58,4 +58,3 @@ namespace BeTiny.Application.Common.Cqrs
             }
         }
     }
-}

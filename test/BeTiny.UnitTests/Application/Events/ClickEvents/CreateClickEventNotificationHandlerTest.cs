@@ -45,13 +45,13 @@ public class CreateClickEventNotificationHandlerTest
         await _handler.Handle(notification);
     
         // Assert
-        await _repository.Received()
+        await _repository.Received(1)
             .AddAsync(
                 Arg.Is<ClickEvent>(ce => ce.Id == notification.ClickEvent.Id),
                 Arg.Any<CancellationToken>()
             );
 
-        await _repository.Received().SaveChanges(Arg.Any<CancellationToken>());
+        await _repository.Received(1).SaveChanges(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class CreateClickEventNotificationHandlerTest
         // Assert
         await func.Should().ThrowAsync<Exception>();
         
-        await _repository.Received()
+        await _repository.Received(1)
             .AddAsync(
                 Arg.Is<ClickEvent>(ce => ce.Id == notification.ClickEvent.Id),
                 Arg.Any<CancellationToken>()

@@ -1,7 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using BeTiny.Application.Common.Enums;
+using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
+using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
 using Microsoft.EntityFrameworkCore;
@@ -37,10 +40,13 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var responseBody = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<CreateShortUrlResponse>(responseBody, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+        var result = JsonSerializer.Deserialize<CreateShortUrlResponse>(
+            responseBody,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }
+        );
 
         result.Should().NotBeNull();
         result!.ShortUrl.Should().NotBeNullOrEmpty();
@@ -56,17 +62,20 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
         createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var responseBody = await createResponse.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<CreateShortUrlResponse>(responseBody, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+        var result = JsonSerializer.Deserialize<CreateShortUrlResponse>(
+            responseBody,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }
+        );
         result.Should().NotBeNull();
         var shortCode = result!.ShortUrl;
 
         using var scope = Factory.Services.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<BeTiny.Application.Common.Interfaces.Cqrs.ISender>();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
         var queryResult = await sender.Send(
-            new BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode.GetByShortCodeRequest(
+            new GetByShortCodeRequest(
                 shortCode,
                 "TestAgent",
                 "http://test.com",
@@ -83,9 +92,9 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
     public async Task GetByShortCode_ReturnsNotFound_WhenShortCodeDoesNotExist()
     {
         using var scope = Factory.Services.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<BeTiny.Application.Common.Interfaces.Cqrs.ISender>();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
         var queryResult = await sender.Send(
-            new BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode.GetByShortCodeRequest(
+            new GetByShortCodeRequest(
                 "notfnd",
                 "TestAgent",
                 "http://test.com",
@@ -94,7 +103,7 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
         );
 
         queryResult.IsSuccess.Should().BeFalse();
-        queryResult.Errors.Should().NotBeNull();
-        queryResult.Errors!.First().ErrorType.Should().Be(BeTiny.Application.Common.Enums.ErrorTypes.NotFoundError);
+        queryResult.Errors.Should().NotBeNullOrEmpty();
+        queryResult.Errors!.First().ErrorType.Should().Be(ErrorTypes.NotFoundError);
     }
 }

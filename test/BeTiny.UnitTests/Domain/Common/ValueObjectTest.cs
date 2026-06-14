@@ -14,9 +14,9 @@ public class ValueObjectTest
         var equalityOperatorResult = valueObject1 == valueObject2;
         var inequalityOperatorResult = valueObject1 != valueObject2;
 
-        Assert.True(equalMethodResult);
-        Assert.True(equalityOperatorResult);
-        Assert.False(inequalityOperatorResult);
+        equalMethodResult.Should().BeTrue();
+        equalityOperatorResult.Should().BeTrue();
+        inequalityOperatorResult.Should().BeFalse();
     }
 
     [Fact]
@@ -29,9 +29,9 @@ public class ValueObjectTest
         var equalityOperatorResult = valueObject1 == valueObject2;
         var inequalityOperatorResult = valueObject1 != valueObject2;
 
-        Assert.False(equalMethodResult);
-        Assert.False(equalityOperatorResult);
-        Assert.True(inequalityOperatorResult);
+        equalMethodResult.Should().BeFalse();
+        equalityOperatorResult.Should().BeFalse();
+        inequalityOperatorResult.Should().BeTrue();
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class ValueObjectTest
         var valueObject1 = new TestValueObject("value");
         var valueObject2 = new TestValueObject("value");
 
-        Assert.Equal(valueObject1.GetHashCode(), valueObject2.GetHashCode());
+        valueObject1.GetHashCode().Should().Be(valueObject2.GetHashCode());
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public class ValueObjectTest
         var equalityOperatorResult = valueObject1 == valueObject2;
         var inequalityOperatorResult = valueObject1 != valueObject2;
 
-        Assert.True(equalityOperatorResult);
-        Assert.False(inequalityOperatorResult);
+        equalityOperatorResult.Should().BeTrue();
+        inequalityOperatorResult.Should().BeFalse();
     }
 
     [Fact]
@@ -65,8 +65,8 @@ public class ValueObjectTest
         var equalityOperatorResult = valueObject1 == valueObject2;
         var inequalityOperatorResult = valueObject1 != valueObject2;
 
-        Assert.False(equalityOperatorResult);
-        Assert.True(inequalityOperatorResult);
+        equalityOperatorResult.Should().BeFalse();
+        inequalityOperatorResult.Should().BeTrue();
     }
 
     [Fact]
@@ -79,9 +79,9 @@ public class ValueObjectTest
         var equalityOperatorResult = valueObject1 == valueObject2;
         var inequalityOperatorResult = valueObject1 != valueObject2;
 
-        Assert.True(equalMethodResult);
-        Assert.True(equalityOperatorResult);
-        Assert.False(inequalityOperatorResult);
+        equalMethodResult.Should().BeTrue();
+        equalityOperatorResult.Should().BeTrue();
+        inequalityOperatorResult.Should().BeFalse();
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class ValueObjectTest
         var valueObject1 = new TestValueObject("value");
         var valueObject2 = valueObject1;
 
-        Assert.Equal(valueObject1.GetHashCode(), valueObject2.GetHashCode());
+        valueObject1.GetHashCode().Should().Be(valueObject2.GetHashCode());
     }
 
     [Fact]
@@ -103,9 +103,9 @@ public class ValueObjectTest
         var equalityOperatorResult = valueObject1 == valueObject2;
         var inequalityOperatorResult = valueObject1 != valueObject2;
 
-        Assert.False(equalMethodResult);
-        Assert.False(equalityOperatorResult);
-        Assert.True(inequalityOperatorResult);
+        equalMethodResult.Should().BeFalse();
+        equalityOperatorResult.Should().BeFalse();
+        inequalityOperatorResult.Should().BeTrue();
     }
 }
 

@@ -6,12 +6,12 @@ using NSubstitute.ExceptionExtensions;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs;
 
-public sealed class PublisherTest
+public sealed class PublisherTests
 {
     private readonly ServiceCollection _serviceCollection;
     private readonly ILogger<Publisher> _logger;
 
-    public PublisherTest()
+    public PublisherTests()
     {
         _serviceCollection = new ServiceCollection();
         _logger = Substitute.For<ILogger<Publisher>>();
@@ -61,14 +61,10 @@ public sealed class PublisherTest
         await handler1.Received(1).Handle(notification, Arg.Any<CancellationToken>());
         await handler2.Received(1).Handle(notification, Arg.Any<CancellationToken>());
 
-        _logger.Received(1)
-            .Log(
-                Arg.Is<LogLevel>(l => l == LogLevel.Information),
-                Arg.Any<EventId>(),
-                Arg.Any<object>(),
-                Arg.Any<Exception?>(),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Information
+                && call.GetArguments()[3] is null)
+            .Should().ContainSingle();
     }
 
     [Fact]
@@ -91,14 +87,10 @@ public sealed class PublisherTest
         
         await publisher.Publish(notification);
 
-        _logger.Received(1)
-            .Log(
-                Arg.Is<LogLevel>(l => l == LogLevel.Error),
-                Arg.Any<EventId>(),
-                Arg.Any<object>(),
-                Arg.Is<Exception>(e => e == exception),
-                Arg.Any<Func<object, Exception?, string>>()
-            );
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Error
+                && call.GetArguments()[3] is Exception ex && ex == exception)
+            .Should().ContainSingle();
     }
 }
 

@@ -3,10 +3,10 @@ using BeTiny.Application.Common.Models;
 
 namespace BeTiny.UnitTests.Application.Common.Models;
 
-public class ResultTest
+public class ResultTests
 {
     [Fact]
-    public void Success_ShouldCreateSuccessfulResult()
+    public void Success_WhenCalled_ShouldCreateSuccessfulResult()
     {
         // Arrange
         var expectedValue = "Success";
@@ -22,7 +22,7 @@ public class ResultTest
     }
 
     [Fact]
-    public void Failure_ShouldCreateFailedResult()
+    public void Failure_WhenCalled_ShouldCreateFailedResult()
     {
         // Arrange
         var errorType = ErrorTypes.ValidationError;
@@ -46,7 +46,7 @@ public class ResultTest
     }
 
     [Fact]
-    public void Failure_ShouldStoreMultipleErrors()
+    public void Failure_WhenCalled_ShouldStoreMultipleErrors()
     {
         // Arrange
         var error1 = new Error(ErrorTypes.ValidationError, "Prop1", "Error 1", ErrorSeverity.Low);
@@ -65,7 +65,7 @@ public class ResultTest
     }
 
     [Fact]
-    public void Failure_ThrowsWhenErrorsNull()
+    public void Failure_WhenErrorsNull_ShouldThrowArgumentException()
     {
         // Act & Assert
         Action act = () => Result<string>.Failure(null!);
@@ -73,7 +73,7 @@ public class ResultTest
     }
 
     [Fact]
-    public void Failure_ThrowsWhenErrorsEmpty()
+    public void Failure_WhenErrorsEmpty_ShouldThrowArgumentException()
     {
         // Act & Assert
         Action act = () => Result<string>.Failure(Array.Empty<Error>());
@@ -81,7 +81,7 @@ public class ResultTest
     }
 
     [Fact]
-    public void Failure_ThrowsWhenErrorsContainNull()
+    public void Failure_WhenErrorsContainNull_ShouldThrowArgumentException()
     {
         // Act & Assert
         Action act = () => Result<string>.Failure([ null! ]);

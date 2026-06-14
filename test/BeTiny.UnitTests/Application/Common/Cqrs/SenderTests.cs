@@ -5,11 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs;
 
-public sealed class SenderTest
+public sealed class SenderTests
 {
     private readonly ServiceCollection _serviceCollection;
 
-    public SenderTest()
+    public SenderTests()
     {
         _serviceCollection = new ServiceCollection();
     }
@@ -27,7 +27,7 @@ public sealed class SenderTest
 
         var response = await sender.Send(request);
 
-        Assert.Equal(request.Message, response);
+        request.Message.Should().BeEquivalentTo(response);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public sealed class SenderTest
 
         var response = await sender.Send(request);
 
-        Assert.Equal("Modified: Hello, World!", response);
+        response.Should().BeEquivalentTo("Modified: Hello, World!");
     }
 }
 

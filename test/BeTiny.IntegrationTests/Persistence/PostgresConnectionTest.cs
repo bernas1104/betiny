@@ -1,5 +1,6 @@
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
+using Bogus;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,15 +39,19 @@ public class PostgresConnectionTest : BaseIntegrationTest, IClassFixture<Integra
         using var scope = Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BeTinyContext>();
 
-        var shortUrl = new Domain.Entities.ShortUrl("https://example.com", "test123");
+        var shortCode = new Faker().Random.String2(
+            7,
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        );
+        var shortUrl = new Domain.Entities.ShortUrl("https://example.com", shortCode);
         await context.ShortUrls.AddAsync(shortUrl);
         await context.SaveChangesAsync();
 
         var retrieved = await context.ShortUrls
-            .FirstOrDefaultAsync(s => s.ShortCode == "test123");
+            .FirstOrDefaultAsync(s => s.ShortCode == shortCode);
 
         retrieved.Should().NotBeNull();
         retrieved!.OriginalUrl.Should().Be("https://example.com");
-        retrieved.ShortCode.Should().Be("test123");
+        retrieved.ShortCode.Should().Be(shortCode);
     }
 }

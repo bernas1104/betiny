@@ -20,5 +20,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLi
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
-    public new Task DisposeAsync() => Task.CompletedTask;
+    public new async Task DisposeAsync()
+    {
+        await base.DisposeAsync();
+    }
 }

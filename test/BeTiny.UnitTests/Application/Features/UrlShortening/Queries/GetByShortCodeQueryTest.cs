@@ -81,6 +81,16 @@ public class GetByShortCodeQueryTest
         result.Value!.OriginalUrl.Should().Be("http://example.com");
         result.Value.ExpiresAt.Should().BeNull();
 
+        capturedExpression.Should().NotBeNull();
+        capturedExpression!.Compile()
+            (new ShortUrl("http://example.com", "abc123"))
+            .Should()
+            .BeTrue();
+        capturedExpression.Compile()
+            (new ShortUrl("http://example.com", "wrong-code"))
+            .Should()
+            .BeFalse();
+
         await _publisher.Received(1).Publish(
             Arg.Is<CreateClickEventNotification>(n =>
                 n.ClickEvent.ShortUrlId == shortUrl.Id &&

@@ -4,19 +4,19 @@ using Microsoft.Extensions.Logging;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs.Pipeline;
 
-public sealed class LoggingBehaviorTest
+public sealed class LoggingBehaviorTests
 {
     private readonly ILogger<LoggingBehavior<TestRequest, string>> _logger;
     private readonly LoggingBehavior<TestRequest, string> _loggingBehavior;
 
-    public LoggingBehaviorTest()
+    public LoggingBehaviorTests()
     {
         _logger = Substitute.For<ILogger<LoggingBehavior<TestRequest, string>>>();
         _loggingBehavior = new LoggingBehavior<TestRequest, string>(_logger);
     }
 
     [Fact]
-    public async Task Handle_ShouldLogRequestStartAndEnd()
+    public async Task Handle_WhenCalled_ShouldLogRequestStartAndEnd()
     {
         var request = new TestRequest { Message = "Test" };
         var next = Substitute.For<RequestHandlerDelegate<string>>();
