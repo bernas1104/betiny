@@ -81,7 +81,7 @@ The commit-msg hook runs `npx commitlint`, and the pre-commit hook runs `dotnet 
 - **var preferred** when the type is obvious (`var builder = WebApplication.CreateBuilder(args)`)
 - **Primary constructors** for simple types (`record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)`)
 - **Extension methods** in `public static` classes, with `this` parameter (`this IServiceCollection services`)
-- **`[ExcludeFromCodeCoverage]`** on DI registration, Program entry point, controllers, and other non-testable infrastructure
+- **`[ExcludeFromCodeCoverage]`** on DI registration, Program entry point, controllers, base entities (`Entity<T>`, `AggregateRoot<TId, TIdType>`), `Unit`, and other non-testable infrastructure
 - **PascalCase** for classes, methods, properties, public fields
 - **camelCase** for local variables, private fields
 - **No BOM** on .cs files (UTF-8 without BOM preferred)
@@ -123,7 +123,7 @@ Notifications run all matching handlers in parallel via `Task.WaitAll`. Individu
 
 ### Repository Pattern
 
-- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`GetByIdAsync`, `AddAsync`, `Update`, `Delete`, `SaveChanges`, etc.)
+- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`AddAsync`, `GetByFilterAsync`, `SaveChanges`)
 - **`GenericRepository<TEntity, TId, TIdType>`** — EF Core implementation in Infrastructure
 - Domain entities are accessed through the generic interface; specialized repositories can extend it if needed
 
@@ -188,12 +188,14 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 - **`IIpResolver`** / **`IpResolver`** — resolves country from IP address (currently placeholder returning `"Unknown"`)
 - **`IDeviceDetector`** / **`DeviceDetector`** — parses User-Agent strings via **UAParser** to classify devices as `Desktop`, `Mobile`, `Tablet`, or `Unknown`
+- **`IDateTimeProvider`** / **`DateTimeProvider`** — provides `DateTime.UtcNow` abstraction for testability
 
 ## IOC Registration
 
 - `ConfigureDatabases.cs` — registers `DbContext` and Redis connections
 - `ConfigureHandlers.cs` — scans and registers `IRequestHandler<>`, `INotificationHandler<>`, `ISender`, `IPublisher`, and pipeline behaviors
-- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`)
+- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`, `IDateTimeProvider`)
+- `ConfigureValidators.cs` — registers FluentValidation validators from the Application assembly
 
 ## VS Code / Editor
 
