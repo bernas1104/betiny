@@ -10,7 +10,8 @@ Solution structure (BeTiny.slnx):
 - `src/BeTiny.Domain/` — domain entities & interfaces
 - `src/BeTiny.Infrastructure/` — persistence, redis, etc.
 - `src/BeTiny.IOC/` — DI registration extension
-- `test/BeTiny.Tests/` — xUnit tests (references all projects)
+- `test/BeTiny.UnitTests/` — xUnit unit tests (references all projects, no external dependencies)
+- `test/BeTiny.IntegrationTests/` — xUnit integration tests with Testcontainers (PostgreSQL + Redis)
 
 ## Build / Test Commands
 
@@ -24,6 +25,12 @@ dotnet build src/BeTiny.Api/BeTiny.Api.csproj
 # Run all tests
 dotnet test
 
+# Run unit tests only (fast, no Docker required)
+dotnet test test/BeTiny.UnitTests/
+
+# Run integration tests (requires Docker)
+dotnet test test/BeTiny.IntegrationTests/
+
 # Run tests with verbose output
 dotnet test --verbosity normal
 
@@ -32,6 +39,10 @@ dotnet test --filter "FullyQualifiedName~Namespace.ClassName"
 
 # Run tests in watch mode (re-run on changes)
 dotnet watch test
+
+# Generate code coverage report
+# Report is generated in ./coverage/ as HTML + Cobertura XML
+dotnet test --collect:"XPlat Code Coverage" --settings .runsettings
 
 # Run the API locally (http://localhost:5245)
 dotnet run --project src/BeTiny.Api
@@ -70,7 +81,7 @@ The commit-msg hook runs `npx commitlint`, and the pre-commit hook runs `dotnet 
 - **var preferred** when the type is obvious (`var builder = WebApplication.CreateBuilder(args)`)
 - **Primary constructors** for simple types (`record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)`)
 - **Extension methods** in `public static` classes, with `this` parameter (`this IServiceCollection services`)
-- **`[ExcludeFromCodeCoverage]`** on DI registration, Program entry point, controllers, and other non-testable infrastructure
+- **`[ExcludeFromCodeCoverage]`** on DI registration, Program entry point, controllers, base entities (`Entity<T>`, `AggregateRoot<TId, TIdType>`), `Unit`, and other non-testable infrastructure
 - **PascalCase** for classes, methods, properties, public fields
 - **camelCase** for local variables, private fields
 - **No BOM** on .cs files (UTF-8 without BOM preferred)
@@ -95,22 +106,24 @@ The project uses a **custom lightweight CQRS** implementation in `BeTiny.Applica
 - **`ISender`** — entry point for dispatching requests (`Send<TResponse>(IRequest<TResponse>, CancellationToken)`)
 - **`IPublisher`** — entry point for fire-and-forget notifications (`Publish<TNotification>(TNotification, CancellationToken)`)
 - **`IRequest<TResponse>`** / **`ICommand<TResponse>`** / **`IQuery<TResponse>`** — marker interfaces for requests
+- **`IRequest`** — marker for requests with no response (equivalent to `IRequest<Unit>`)
 - **`IRequestHandler<TRequest, TResponse>`** — handler contract implemented by command/query handlers
-- **`INotification`** — marker interface for pub/sub notifications (extends `IRequest<Task>`)
+- **`INotification`** — marker interface for pub/sub notifications (extends `IRequest` → `IRequest<Unit>`)
+- **`Unit`** — a `readonly struct` representing a void-like response for requests with no return value
 - **`INotificationHandler<TNotification>`** — handler contract for side-effect notifications
-- **`IPipelineBehavior<TRequest, TResponse>`** — middleware contract for cross-cutting concerns (dual overloads for requests and notifications)
+- **`IPipelineBehavior<TRequest, TResponse>`** — middleware contract for cross-cutting concerns (applies only to requests)
 
 Registered pipeline behaviors (applied in order):
-- **`ValidationBehavior`** — dynamically resolves `IValidator<>` via `IServiceProvider` and returns `Result<T>` with validation errors for requests (notification pipeline not implemented)
-- **`LoggingBehavior`** — logs start and elapsed time (ms) for request and notification execution via `ILogger<TRequest>`
+- **`ValidationBehavior`** — dynamically resolves `IValidator<>` via `IServiceProvider` and returns `Result<T>` with validation errors for requests
+- **`LoggingBehavior`** — logs start and elapsed time (ms) for request execution via `ILogger<TRequest>`
 
 Handlers, behaviors, and the publisher are registered via Scrutor assembly scanning in `ConfigureHandlers.cs`.
 
-Notifications run all matching handlers in parallel via `Task.WhenAll`.
+Notifications run all matching handlers in parallel via `Task.WaitAll`. Individual handler failures are surfaced as `AggregateException`, and each inner exception is logged separately via `ILogger<Publisher>`.
 
 ### Repository Pattern
 
-- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`GetByIdAsync`, `AddAsync`, `Update`, `Delete`, `SaveChanges`, etc.)
+- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`AddAsync`, `GetByFilterAsync`, `SaveChanges`)
 - **`GenericRepository<TEntity, TId, TIdType>`** — EF Core implementation in Infrastructure
 - Domain entities are accessed through the generic interface; specialized repositories can extend it if needed
 
@@ -136,11 +149,13 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 ### Testing (xUnit)
 
 - Use xUnit `[Fact]` for plain tests, `[Theory]` + `[InlineData]` for parameterized tests
-- Test files live in `test/BeTiny.Tests/` mirroring the `src/` folder structure
+- Test files live in `test/BeTiny.UnitTests/` and `test/BeTiny.IntegrationTests/` mirroring the `src/` folder structure
 - Use `dotnet test --filter` to target specific tests; no custom test runner scripts
-- Coverlet is configured for code coverage
+- Coverlet is configured for code coverage with `coverlet.msbuild` + `coverlet.collector`
 - Use the Arrange-Act-Assert (AAA) test pattern
-- Moq is used for mocking dependencies; Bogus is available for fake data generation
+- **NSubstitute** is used for mocking dependencies; **Bogus** for fake data; **AwesomeAssertions** for assertions
+- Integration tests use **Testcontainers** for real PostgreSQL + Redis containers
+- A `.runsettings` file at repo root configures coverage formats (HTML + Cobertura) and 80% minimum threshold
 
 ### Naming Conventions
 
@@ -173,12 +188,14 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 - **`IIpResolver`** / **`IpResolver`** — resolves country from IP address (currently placeholder returning `"Unknown"`)
 - **`IDeviceDetector`** / **`DeviceDetector`** — parses User-Agent strings via **UAParser** to classify devices as `Desktop`, `Mobile`, `Tablet`, or `Unknown`
+- **`IDateTimeProvider`** / **`DateTimeProvider`** — provides `DateTime.UtcNow` abstraction for testability
 
 ## IOC Registration
 
 - `ConfigureDatabases.cs` — registers `DbContext` and Redis connections
 - `ConfigureHandlers.cs` — scans and registers `IRequestHandler<>`, `INotificationHandler<>`, `ISender`, `IPublisher`, and pipeline behaviors
-- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`)
+- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`, `IDateTimeProvider`)
+- `ConfigureValidators.cs` — registers FluentValidation validators from the Application assembly
 
 ## VS Code / Editor
 

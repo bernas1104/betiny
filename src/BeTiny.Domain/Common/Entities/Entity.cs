@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace BeTiny.Domain.Common.Entities;
 
+[ExcludeFromCodeCoverage]
 public abstract class Entity<TIdType>
 {
     public TIdType Id { get; protected set; }
@@ -18,6 +21,6 @@ public abstract class Entity<TIdType>
     public Entity(TIdType id)
     {
         Id = id;
-        CreatedAt = DateTime.Now;
+        CreatedAt = DateTime.UtcNow;
     }
 }

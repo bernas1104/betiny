@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Domain.Common.ValueObjects;
 
 namespace BeTiny.Domain.Common.Entities;
 
+[ExcludeFromCodeCoverage]
 public abstract class AggregateRoot<TId, TIdType> : Entity<TId>
     where TId : AggregateRootId<TIdType>
 {

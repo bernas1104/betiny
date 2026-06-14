@@ -19,7 +19,8 @@ src/
 ├── BeTiny.Infrastructure — Persistence, Redis, etc.
 ├── BeTiny.IOC          — DI registration extension
 test/
-└── BeTiny.Tests        — xUnit tests
+├── BeTiny.UnitTests        — xUnit unit tests (fast, no external dependencies)
+└── BeTiny.IntegrationTests — xUnit integration tests with Testcontainers (PostgreSQL + Redis)
 ```
 
 ### Layer rules
@@ -42,7 +43,7 @@ Tests → (all projects)
 | Validation     | FluentValidation                        |
 | Scanning       | Scrutor                                 |
 | Device parsing | UAParser                                |
-| Testing        | xUnit + Coverlet + Moq + Bogus          |
+| Testing        | xUnit + Coverlet + NSubstitute + AwesomeAssertions + Bogus + Testcontainers |
 | Commit hooks   | Husky + Commitlint (conventional commits) |
 
 ## Prerequisites
@@ -89,7 +90,10 @@ Connection strings are set in `appsettings.Development.json` under `ConnectionSt
 ```bash
 dotnet build                    # Build the solution
 dotnet test                     # Run all tests
+dotnet test test/BeTiny.UnitTests/     # Run unit tests only (fast, no Docker)
+dotnet test test/BeTiny.IntegrationTests/  # Run integration tests (requires Docker)
 dotnet test --filter "FullyQualifiedName~Namespace.ClassName"  # Filter by class
+dotnet test --collect:"XPlat Code Coverage" --settings .runsettings  # Generate coverage report
 dotnet watch test               # Re-run tests on changes
 dotnet run --project src/BeTiny.Api   # Run the API
 docker compose up -d            # Start PostgreSQL + Redis (detached)

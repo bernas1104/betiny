@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura,html</Format>
+          <ExcludeByAttribute>ExcludeFromCodeCoverage</ExcludeByAttribute>
+          <ExcludeByFile>**/Program.cs,**/Migrations/**</ExcludeByFile>
+          <ExcludeByNamespace>BeTiny.Infrastructure.Postgres.Migrations</ExcludeByNamespace>
+          <MinimumThreshold>80</MinimumThreshold>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

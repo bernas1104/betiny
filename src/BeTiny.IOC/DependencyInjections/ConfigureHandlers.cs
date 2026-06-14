@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Application;
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BeTiny.IOC.DependencyInjections;
 
+[ExcludeFromCodeCoverage]
 public static class ConfigureHandlers
 {
     public static IServiceCollection RegisterHandlers(this IServiceCollection services)

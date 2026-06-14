@@ -3,6 +3,7 @@ using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +17,7 @@ public class CreateShortUrlCommand :
 {
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
     private readonly IShortCodeGenerator _shortCodeGenerator;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<CreateShortUrlCommand> _logger;
 
     /// <summary>
@@ -27,11 +29,13 @@ public class CreateShortUrlCommand :
     public CreateShortUrlCommand(
         IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
         IShortCodeGenerator shortCodeGenerator,
+        IDateTimeProvider dateTimeProvider,
         ILogger<CreateShortUrlCommand> logger
     )
     {
         _shortUrlRepository = shortUrlRepository;
         _shortCodeGenerator = shortCodeGenerator;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
@@ -49,7 +53,7 @@ public class CreateShortUrlCommand :
         var shortCode = await _shortCodeGenerator.GenerateShortCode();
 
         var shortUrl = new ShortUrl(command.OriginalUrl, shortCode);
-        shortUrl.SetExpiration(command.ExpiresAt);
+        shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
 
         await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
         await _shortUrlRepository.SaveChanges(cancellationToken);

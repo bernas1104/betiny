@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Enums;
 using BeTiny.Domain.ValueObjects;
 
 namespace BeTiny.Domain.Entities;
 
+[ExcludeFromCodeCoverage]
 public sealed class ClickEvent : AggregateRoot<ClickEventId, Guid>
 {
     public ShortUrlId ShortUrlId { get; private set; }

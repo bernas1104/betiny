@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Enums;
 using BeTiny.Domain.ValueObjects;
 
 namespace BeTiny.Domain.Entities;
 
+[ExcludeFromCodeCoverage]
 public sealed class User : AggregateRoot<UserId, Guid>
 {
     public string Email { get; private set; }

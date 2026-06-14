@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using BeTiny.IOC;
+using System.Diagnostics.CodeAnalysis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,3 +37,8 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 await app.RunAsync();
+
+#pragma warning disable ASP0027 // Unnecessary public Program class declaration
+[ExcludeFromCodeCoverage]
+public partial class Program { }
+#pragma warning restore ASP0027 // Unnecessary public Program class declaration

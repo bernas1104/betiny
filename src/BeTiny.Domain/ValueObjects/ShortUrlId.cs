@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using BeTiny.Domain.Common.ValueObjects;
 
 namespace BeTiny.Domain.ValueObjects;
 
+[ExcludeFromCodeCoverage]
 public sealed class ShortUrlId : AggregateRootId<Guid>
 {
   public override Guid Value { get; protected set; }
