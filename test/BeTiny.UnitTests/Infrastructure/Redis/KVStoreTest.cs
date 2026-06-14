@@ -19,7 +19,7 @@ public sealed class KVStoreTest
     }
 
     [Fact]
-    public async Task GetNextHashSeed_WhenCalled_ShouldReturnIncrementedValue()
+    public async Task GetNextHashSeed_WhenCalled_ReturnsIncrementedValue()
     {
         _database.StringIncrementAsync("UrlShortener:Counter")
             .Returns(Task.FromResult(5L));

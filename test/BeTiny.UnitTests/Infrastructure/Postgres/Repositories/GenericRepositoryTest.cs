@@ -18,7 +18,7 @@ public sealed class GenericRepositoryTest
     }
 
     [Fact]
-    public async Task GetByFilterAsync_WhenEntityMatchesFilter_ShouldReturnEntity()
+    public async Task GetByFilterAsync_WhenEntityMatchesFilter_ReturnsEntity()
     {
         var shortUrl = new ShortUrl("https://example.com", "foo");
 
@@ -32,7 +32,7 @@ public sealed class GenericRepositoryTest
     }
 
     [Fact]
-    public async Task GetByFilterAsync_WhenNoEntityMatchesFilter_ShouldReturnNull()
+    public async Task GetByFilterAsync_WhenNoEntityMatchesFilter_ReturnsNull()
     {
         var result = await _repository.GetByFilterAsync(e => e.ShortCode == "nonexistent");
 
@@ -40,7 +40,7 @@ public sealed class GenericRepositoryTest
     }
 
     [Fact]
-    public async Task AddAsync_WhenCalled_ShouldAddEntityToContext()
+    public async Task AddAsync_WhenCalled_AddsEntityToContext()
     {
         var shortUrl = new ShortUrl("https://example.com", "bar");
 

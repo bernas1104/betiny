@@ -13,7 +13,7 @@ public sealed class DateTimeProviderTest
     }
 
     [Fact]
-    public void UtcNow_WhenCalled_ShouldReturnCurrentUtcDateTime()
+    public void UtcNow_WhenCalled_ReturnsCurrentUtcDateTime()
     {
         // Arrange
         var expected = DateTime.UtcNow;
