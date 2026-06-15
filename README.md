@@ -4,9 +4,10 @@ A URL shortener built as a system design exercise using **.NET 10** with Clean A
 
 ## Features
 
-- Create short URLs with an optional expiration date (`expiresAt`).
-- Redirect to the original URL via the short code.
+- Create short URLs with an optional expiration date (`expiresAt`) and an optional **custom alias**.
+- Redirect to the original URL via the short code or custom alias.
 - Expired short codes return **HTTP 410 Gone**.
+- Duplicate custom aliases return **HTTP 409 Conflict**.
 - Click event tracking on redirect — captures device type, IP address/country, User-Agent, and referer.
 
 ## Architecture

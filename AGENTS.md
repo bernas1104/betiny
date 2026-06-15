@@ -123,7 +123,7 @@ Notifications run all matching handlers in parallel via `Task.WaitAll`. Individu
 
 ### Repository Pattern
 
-- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`AddAsync`, `GetByFilterAsync`, `SaveChanges`)
+- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`AddAsync`, `GetByFilterAsync`, `AnyAsync`, `SaveChanges`)
 - **`GenericRepository<TEntity, TId, TIdType>`** — EF Core implementation in Infrastructure
 - Domain entities are accessed through the generic interface; specialized repositories can extend it if needed
 
@@ -172,6 +172,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
   - `ValidationError` → 400 Bad Request
   - `NotFoundError` → 404 Not Found
   - `ExpiredError` → 410 Gone
+  - `ConflictError` → 500 Internal Server Error (mapping to be updated)
 - Exceptions reserved for truly exceptional / infrastructure failures
 - Log via `ILogger<T>` (structured logging with Serilog planned)
 
