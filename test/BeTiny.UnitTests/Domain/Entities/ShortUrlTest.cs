@@ -15,7 +15,9 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_SetsExpiresAt_WhenValidDateTime()
     {
-        var shortUrl = new ShortUrl("https://example.com", "abc123");
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode("abc123");
+
         var baseUtc = DateTime.UtcNow;
         var futureDate = baseUtc.AddDays(1);
         _dateTimeProvider.UtcNow.Returns(baseUtc);
@@ -31,7 +33,9 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_ExpiresShortUrl_WhenExpirationDateIsInThePast()
     {
-        var shortUrl = new ShortUrl("https://example.com", "abc123");
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode("abc123");
+
         var baseUtc = DateTime.UtcNow;
         var pastDate = baseUtc.AddDays(-1);
         _dateTimeProvider.UtcNow.Returns(baseUtc.AddDays(-2));
@@ -47,7 +51,9 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_ThrowsArgumentException_WhenDateTimeIsNotUtc()
     {
-        var shortUrl = new ShortUrl("https://example.com", "abc123");
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode("abc123");
+
         var baseUtc = DateTime.UtcNow;
         var nonUtcDate = DateTime.Now.AddDays(1);
         _dateTimeProvider.UtcNow.Returns(baseUtc);
@@ -62,7 +68,9 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_ThrowsArgumentException_WhenDateTimeIsInThePast()
     {
-        var shortUrl = new ShortUrl("https://example.com", "abc123");
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode("abc123");
+        
         var baseUtc = DateTime.UtcNow;
         var pastDate = baseUtc.AddDays(-1);
         _dateTimeProvider.UtcNow.Returns(baseUtc);
