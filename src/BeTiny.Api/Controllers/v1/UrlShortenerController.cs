@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
-using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
+using BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 
@@ -69,7 +69,7 @@ public class UrlShortenerController : Controller
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
         
         var result = await _sender.Send(
-            new GetByShortCodeRequest(
+            new GetByShortUrlRequest(
                 shortCode,
                 HttpContext.Request.Headers["User-Agent"].ToString(),
                 HttpContext.Request.Headers["Referer"].ToString(),
