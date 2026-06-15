@@ -1,3 +1,4 @@
+using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
@@ -50,10 +51,36 @@ public class CreateShortUrlCommand :
         CancellationToken cancellationToken
     )
     {
-        var shortCode = await _shortCodeGenerator.GenerateShortCode();
-
-        var shortUrl = new ShortUrl(command.OriginalUrl, shortCode);
+        var shortUrl = new ShortUrl(command.OriginalUrl);
         shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
+
+        if (command.CustomAlias is null)
+        {
+            var shortCode = await _shortCodeGenerator.GenerateShortCode();
+            shortUrl.SetShortCode(shortCode);
+        }
+
+        if (command.CustomAlias is not null)
+        {
+            var customAliasExists = await _shortUrlRepository.AnyAsync(
+                f => f.CustomAlias == command.CustomAlias,
+                cancellationToken
+            );
+
+            if (customAliasExists)
+            {
+                return Result<CreateShortUrlResponse>.Failure(
+                    new Error(
+                        ErrorTypes.ConflictError,
+                        nameof(command.CustomAlias),
+                        "The custom alias is already in use. Please choose a different one.",
+                        ErrorSeverity.Medium
+                    )
+                );
+            }
+
+            shortUrl.SetCustomAlias(command.CustomAlias);
+        }
 
         await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
         await _shortUrlRepository.SaveChanges(cancellationToken);
@@ -61,11 +88,11 @@ public class CreateShortUrlCommand :
         _logger.LogInformation(
             "Short URL for {OriginalUrl} created: {ShortUrl}",
             command.OriginalUrl,
-            shortUrl.ShortCode
+            shortUrl.ShortCode ?? shortUrl.CustomAlias
         );
 
         return Result<CreateShortUrlResponse>.Success(
-            new CreateShortUrlResponse(shortUrl.ShortCode)
+            new CreateShortUrlResponse(shortUrl.ShortCode ?? shortUrl.CustomAlias)
         );
     }
 }

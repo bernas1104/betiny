@@ -2,24 +2,24 @@ using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Models;
 using FluentValidation;
 
-namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
+namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 
-public sealed record GetByShortCodeRequest(
+public sealed record GetByShortUrlRequest(
     string ShortCode,
     string UserAgent,
     string Referer,
     string? IpAddress = null
-)   : IRequest<Result<GetByShortCodeResponse>>;
+)   : IRequest<Result<GetByShortUrlResponse>>;
 
 /// <summary>
-/// Validator for the <see cref="GetByShortCodeRequest"/> class.
+/// Validator for the <see cref="GetByShortUrlRequest"/> class.
 /// </summary>
-public sealed class GetByShortCodeRequestValidator : AbstractValidator<GetByShortCodeRequest>
+public sealed class GetByShortUrlRequestValidator : AbstractValidator<GetByShortUrlRequest>
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="GetByShortCodeRequestValidator"/> class.
+    /// Initializes a new instance of the <see cref="GetByShortUrlRequestValidator"/> class.
     /// </summary>
-    public GetByShortCodeRequestValidator()
+    public GetByShortUrlRequestValidator()
     {
         RuleFor(x => x.ShortCode)
             .NotEmpty()
