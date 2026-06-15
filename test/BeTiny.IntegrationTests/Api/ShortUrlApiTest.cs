@@ -4,7 +4,7 @@ using System.Text.Json;
 using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
-using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
+using BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
 using Microsoft.EntityFrameworkCore;
@@ -53,7 +53,7 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
     }
 
     [Fact]
-    public async Task GetByShortCode_ReturnsOriginalUrl_WhenShortCodeExists()
+    public async Task GetByShortUrl_ReturnsOriginalUrl_WhenShortCodeExists()
     {
         var createRequest = new CreateShortUrlRequest("https://www.example.com");
         var json = JsonSerializer.Serialize(createRequest);
@@ -70,12 +70,12 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
             }
         );
         result.Should().NotBeNull();
-        var shortCode = result!.ShortUrl;
+        var shortCode = result!.ShortUrl!;
 
         using var scope = Factory.Services.CreateScope();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
         var queryResult = await sender.Send(
-            new GetByShortCodeRequest(
+            new GetByShortUrlRequest(
                 shortCode,
                 "TestAgent",
                 "http://test.com",
@@ -89,12 +89,12 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
     }
 
     [Fact]
-    public async Task GetByShortCode_ReturnsNotFound_WhenShortCodeDoesNotExist()
+    public async Task GetByShortUrl_ReturnsNotFound_WhenShortCodeDoesNotExist()
     {
         using var scope = Factory.Services.CreateScope();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
         var queryResult = await sender.Send(
-            new GetByShortCodeRequest(
+            new GetByShortUrlRequest(
                 "notfnd",
                 "TestAgent",
                 "http://test.com",

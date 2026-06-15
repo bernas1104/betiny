@@ -1,15 +1,15 @@
-using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
+using BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 
 namespace BeTiny.UnitTests.Application.Features.UrlShortening.Validators;
 
 public class GetByShortUrlRequestValidatorTest
 {
-    private readonly GetByShortCodeRequestValidator _validator = new ();
+    private readonly GetByShortUrlRequestValidator _validator = new ();
 
     [Fact]
     public void GivenValidShortCode_WhenValidated_ThenNoErrors()
     {
-        var request = new GetByShortCodeRequest(
+        var request = new GetByShortUrlRequest(
             "abcdefg",
             "UserAgent",
             "Referer",
@@ -27,7 +27,7 @@ public class GetByShortUrlRequestValidatorTest
     [InlineData("?")]
     public void GivenInvalidShortCode_WhenValidated_TheErrors(string shortCode)
     {
-        var request = new GetByShortCodeRequest(
+        var request = new GetByShortUrlRequest(
             shortCode,
             "UserAgent",
             "Referer",
@@ -38,6 +38,6 @@ public class GetByShortUrlRequestValidatorTest
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should()
-            .Contain(e => e.PropertyName == nameof(GetByShortCodeRequest.ShortCode));
+            .Contain(e => e.PropertyName == nameof(GetByShortUrlRequest.ShortCode));
     }
 }

@@ -20,7 +20,8 @@ public sealed class GenericRepositoryTest
     [Fact]
     public async Task GetByFilterAsync_WhenEntityMatchesFilter_ReturnsEntity()
     {
-        var shortUrl = new ShortUrl("https://example.com", "foo");
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode("foo");
 
         _context.ShortUrls.Add(shortUrl);
         await _repository.SaveChanges();
@@ -42,7 +43,8 @@ public sealed class GenericRepositoryTest
     [Fact]
     public async Task AddAsync_WhenCalled_AddsEntityToContext()
     {
-        var shortUrl = new ShortUrl("https://example.com", "bar");
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode("bar");
 
         await _repository.AddAsync(shortUrl);
         await _repository.SaveChanges();
@@ -51,5 +53,27 @@ public sealed class GenericRepositoryTest
 
         result.Should().NotBeNull();
         result!.ShortCode.Should().Be("bar");
+    }
+
+    [Fact]
+    public async Task AnyAsync_WhenEntityMatchesFilter_ReturnsTrue()
+    {
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode("baz");
+
+        await _repository.AddAsync(shortUrl);
+        await _repository.SaveChanges();
+
+        var result = await _repository.AnyAsync(e => e.ShortCode == "baz");
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AnyAsync_WhenNoEntityMatchesFilter_ReturnsFalse()
+    {
+        var result = await _repository.AnyAsync(e => e.ShortCode == "nonexistent");
+
+        result.Should().BeFalse();
     }
 }

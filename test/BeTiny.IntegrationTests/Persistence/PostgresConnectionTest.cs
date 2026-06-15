@@ -1,3 +1,4 @@
+using BeTiny.Domain.Entities;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
 using Bogus;
@@ -43,7 +44,9 @@ public class PostgresConnectionTest : BaseIntegrationTest, IClassFixture<Integra
             7,
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         );
-        var shortUrl = new Domain.Entities.ShortUrl("https://example.com", shortCode);
+        var shortUrl = new ShortUrl("https://example.com");
+        shortUrl.SetShortCode(shortCode);
+        
         await context.ShortUrls.AddAsync(shortUrl);
         await context.SaveChangesAsync();
 

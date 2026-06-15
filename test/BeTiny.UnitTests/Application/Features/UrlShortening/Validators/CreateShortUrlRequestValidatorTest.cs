@@ -46,4 +46,60 @@ public class CreateShortUrlRequestValidatorTest
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.OriginalUrl));
     }
+
+    public static IEnumerable<object[]> InvalidCustomAliasData => new[]
+    {
+        ["ab"],
+        ["a"],
+        ["a".PadLeft(51, 'a')],
+        new object[] { "invalid alias!" }
+    };
+
+    [Theory]
+    [MemberData(nameof(InvalidCustomAliasData))]
+    public void GivenInvalidCustomAlias_WhenValidated_ThenErrors(string customAlias)
+    {
+        var request = new CreateShortUrlRequest("http://example.com", customAlias);
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.CustomAlias));
+    }
+
+    [Fact]
+    public void GivenValidCustomAlias_WhenValidated_ThenNoErrors()
+    {
+        var request = new CreateShortUrlRequest("http://example.com", "valid_alias-123");
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void GivenExpiresAtInLocalTime_WhenValidated_ThenErrors()
+    {
+        var localTime = DateTime.Now.AddDays(1);
+        var request = new CreateShortUrlRequest("http://example.com", ExpiresAt: localTime);
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should()
+            .Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.ExpiresAt));
+    }
+
+    [Fact]
+    public void GivenExpiresAtInThePast_WhenValidated_ThenErrors()
+    {
+        var pastTime = DateTime.UtcNow.AddDays(-1);
+        var request = new CreateShortUrlRequest("http://example.com", ExpiresAt: pastTime);
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should()
+            .Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.ExpiresAt));
+    }
 }

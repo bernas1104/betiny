@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
@@ -32,7 +34,7 @@ public class CreateShortUrlCommandTest
     }
 
     [Fact]
-    public async Task Handle_ShouldCreateShortUrl()
+    public async Task Handle_WhenNoCustomAliasProvided_ShouldCreateShortUrlFromShortCodeGenerator()
     {
         // Arrange
         var originalUrl = "https://www.example.com";
@@ -54,10 +56,66 @@ public class CreateShortUrlCommandTest
             Arg.Is<ShortUrl>(
                 s => s.OriginalUrl == originalUrl
                     && s.ShortCode == shortCode
+                    && s.CustomAlias == null
             ),
             Arg.Any<CancellationToken>()
         );
 
         await _shortUrlRepository.Received(1).SaveChanges(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenCustomAliasProvided_ShouldCreateShortUrlWithCustomAlias()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var customAlias = "my-alias";
+
+        var request = new CreateShortUrlRequest(originalUrl, customAlias);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.ShortUrl.Should().Be(customAlias);
+
+        await _shortCodeGenerator.DidNotReceive().GenerateShortCode();
+
+        await _shortUrlRepository.Received(1)
+            .AddAsync(
+                Arg.Is<ShortUrl>(
+                    s => s.OriginalUrl == originalUrl
+                        && s.CustomAlias == customAlias
+                        && s.ShortCode == null
+                ),
+                Arg.Any<CancellationToken>()
+            );
+
+        await _shortUrlRepository.Received(1)
+            .SaveChanges(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenCustomAliasAlreadyExists_ShouldReturnFailureResult()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var customAlias = "existing-alias";
+
+        _shortUrlRepository.AnyAsync(
+            Arg.Any<Expression<Func<ShortUrl, bool>>>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(true);
+
+        var request = new CreateShortUrlRequest(originalUrl, customAlias);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ConflictError);
     }
 }
