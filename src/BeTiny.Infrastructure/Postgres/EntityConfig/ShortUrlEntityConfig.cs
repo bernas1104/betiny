@@ -33,14 +33,18 @@ public class ShortUrlEntityConfig : IEntityTypeConfiguration<ShortUrl>
         builder.Property(x => x.ShortCode)
             .HasMaxLength(7)
             .HasColumnName("ShortCode")
-            .IsRequired();
+            .IsRequired(false);
 
         builder.HasIndex(x => x.ShortCode)
             .IsUnique();
 
         builder.Property(x => x.CustomAlias)
             .HasMaxLength(50)
-            .HasColumnName("CustomAlias");
+            .HasColumnName("CustomAlias")
+            .IsRequired(false);
+
+        builder.HasIndex(x => x.CustomAlias)
+            .IsUnique();
 
         builder.Property(x => x.ExpiresAt)
             .HasColumnName("ExpiresAt");

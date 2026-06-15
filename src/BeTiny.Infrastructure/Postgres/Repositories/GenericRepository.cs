@@ -39,6 +39,14 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
             .FirstOrDefaultAsync(filter, ct);
     }
 
+    public Task<bool> AnyAsync(Expression<Func<TEntity, bool>> filter, CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        return _context.Set<TEntity>()
+            .AnyAsync(filter, ct);
+    }
+
     public Task<int> SaveChanges(CancellationToken ct = default)
     {
         return _context.SaveChangesAsync(ct);
