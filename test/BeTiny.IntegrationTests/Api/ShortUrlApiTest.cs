@@ -1,10 +1,8 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
-using BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
 using Microsoft.AspNetCore.Mvc;

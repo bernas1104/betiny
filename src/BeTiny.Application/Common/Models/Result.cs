@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using BeTiny.Application.Common.Enums;
+using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 
 namespace BeTiny.Application.Common.Models;
 
