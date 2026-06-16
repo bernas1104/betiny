@@ -18,6 +18,10 @@ public class ValidationBehavior<TRequest, TResponse>
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationBehavior{TRequest, TResponse}"/> class.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider to resolve validators.</param>
     public ValidationBehavior(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;

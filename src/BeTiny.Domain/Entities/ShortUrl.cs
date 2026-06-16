@@ -24,6 +24,11 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     }
     #pragma warning restore
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ShortUrl"/> class with the specified original URL and alias type.
+    /// </summary>
+    /// <param name="originalUrl">The original URL to shorten.</param>
+    /// <param name="type">The type of alias (auto-generated short code or custom alias).</param>
     public ShortUrl(string originalUrl, AliasUrlType type)
     {
         Id = ShortUrlId.CreateUnique();
@@ -35,6 +40,13 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
         ClickEvents = [];
     }
 
+    /// <summary>
+    /// Sets the alias URL for this shortened URL, applying validation rules based on the alias type.
+    /// </summary>
+    /// <param name="aliasUrl">The alias URL value.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the alias URL is null, whitespace, or does not match type-specific validation rules.
+    /// </exception>
     public void SetAliasUrl(string aliasUrl)
     {
         if (string.IsNullOrWhiteSpace(aliasUrl))
@@ -55,9 +67,22 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     [GeneratedRegex("^[A-Za-z0-9_-]{3,50}$")]
     private static partial Regex CustomAliasRegex();
 
+    /// <summary>
+    /// Determines whether this short URL has expired based on the provided date time provider.
+    /// </summary>
+    /// <param name="dateTimeProvider">The date time provider for obtaining the current UTC time.</param>
+    /// <returns><c>true</c> if the URL is expired; otherwise, <c>false</c>.</returns>
     public bool IsExpired(IDateTimeProvider dateTimeProvider)
         => ExpiresAt.HasValue && dateTimeProvider.UtcNow > ExpiresAt.Value;
 
+    /// <summary>
+    /// Sets the expiration date and time for this short URL.
+    /// </summary>
+    /// <param name="expiresAt">The expiration date and time in UTC, or <c>null</c> to clear expiration.</param>
+    /// <param name="dateTimeProvider">The date time provider for obtaining the current UTC time.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="expiresAt"/> is not in UTC or is in the past.
+    /// </exception>
     public void SetExpiration(DateTime? expiresAt, IDateTimeProvider dateTimeProvider)
     {
         if (expiresAt.HasValue)

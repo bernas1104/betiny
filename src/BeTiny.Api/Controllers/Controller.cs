@@ -25,6 +25,14 @@ public abstract class Controller : ControllerBase
         _sender = sender;
     }
 
+    /// <summary>
+    /// Handles the result of an operation by either returning a successful response
+    /// or mapping errors to appropriate HTTP status codes.
+    /// </summary>
+    /// <typeparam name="T">The type of the result value.</typeparam>
+    /// <param name="result">The result to handle.</param>
+    /// <param name="resultMethod">A function that returns the success IActionResult.</param>
+    /// <returns>An IActionResult based on the result state.</returns>
     protected IActionResult HandleResult<T>(
         Result<T> result,
         Func<IActionResult> resultMethod

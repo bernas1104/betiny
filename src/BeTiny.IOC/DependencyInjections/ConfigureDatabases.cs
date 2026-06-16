@@ -13,6 +13,12 @@ namespace BeTiny.IOC.DependencyInjections;
 [ExcludeFromCodeCoverage]
 public static class ConfigureDatabases
 {
+    /// <summary>
+    /// Registers PostgreSQL (Entity Framework Core) and Redis database dependencies.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The application configuration.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection RegisterDatabases(
         this IServiceCollection services,
         IConfiguration configuration

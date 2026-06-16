@@ -18,6 +18,10 @@ public abstract class Entity<TIdType>
     }
     #pragma warning restore
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Entity{TIdType}"/> class with the specified identifier.
+    /// </summary>
+    /// <param name="id">The entity identifier.</param>
     public Entity(TIdType id)
     {
         Id = id;

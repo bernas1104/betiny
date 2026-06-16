@@ -19,6 +19,10 @@ public sealed class User : AggregateRoot<UserId, Guid>
     }
     #pragma warning restore
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="User"/> class with the specified email.
+    /// </summary>
+    /// <param name="email">The user's email address.</param>
     public User(string email)
     {
         Id = UserId.CreateUnique();

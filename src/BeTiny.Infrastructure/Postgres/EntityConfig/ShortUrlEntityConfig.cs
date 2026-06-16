@@ -5,8 +5,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BeTiny.Infrastructure.Postgres.EntityConfig;
 
+/// <summary>
+/// Entity Framework Core configuration for the <see cref="ShortUrl"/> entity.
+/// </summary>
 public class ShortUrlEntityConfig : IEntityTypeConfiguration<ShortUrl>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<ShortUrl> builder)
     {
         builder.ToTable("ShortUrls");

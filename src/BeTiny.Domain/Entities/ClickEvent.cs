@@ -23,6 +23,15 @@ public sealed class ClickEvent : AggregateRoot<ClickEventId, Guid>
     }
     #pragma warning restore
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClickEvent"/> class with the specified parameters.
+    /// </summary>
+    /// <param name="shortUrlId">The associated short URL identifier.</param>
+    /// <param name="ipAddress">The IP address of the client.</param>
+    /// <param name="country">The country resolved from the IP address.</param>
+    /// <param name="userAgent">The user agent string.</param>
+    /// <param name="referer">The HTTP referer header.</param>
+    /// <param name="deviceType">The detected device type.</param>
     public ClickEvent(
         ShortUrlId shortUrlId,
         string ipAddress,

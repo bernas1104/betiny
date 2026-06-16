@@ -10,6 +10,11 @@ namespace BeTiny.IOC.DependencyInjections;
 [ExcludeFromCodeCoverage]
 public static class ConfigureServices
 {
+    /// <summary>
+    /// Registers application and infrastructure services for dependency injection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection RegisterServices(
         this IServiceCollection services
     )

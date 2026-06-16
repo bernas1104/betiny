@@ -1,5 +1,8 @@
 namespace BeTiny.Application.Common.Interfaces.Services;
 
+/// <summary>
+/// Defines a contract for generating short codes used in URL shortening.
+/// </summary>
 public interface IShortCodeGenerator
 {
     /// <summary>

@@ -4,6 +4,13 @@ using FluentValidation;
 
 namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 
+/// <summary>
+/// Represents a request to retrieve the original URL associated with a short URL.
+/// </summary>
+/// <param name="ShortUrl">The short URL to look up.</param>
+/// <param name="UserAgent">The user agent string from the HTTP request.</param>
+/// <param name="Referer">The referer header from the HTTP request.</param>
+/// <param name="IpAddress">The IP address of the client, if available.</param>
 public sealed record GetByShortUrlRequest(
     string ShortUrl,
     string UserAgent,

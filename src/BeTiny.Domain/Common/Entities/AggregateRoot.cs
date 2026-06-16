@@ -16,6 +16,10 @@ public abstract class AggregateRoot<TId, TIdType> : Entity<TId>
     }
     #pragma warning restore
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AggregateRoot{TId, TIdType}"/> class with the specified identifier.
+    /// </summary>
+    /// <param name="id">The aggregate root identifier.</param>
     protected AggregateRoot(TId id)
     {
         Id = id;

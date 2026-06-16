@@ -17,8 +17,14 @@ public sealed record CreateShortUrlRequest(
     DateTime? ExpiresAt = null
 ) : ICommand<Result<CreateShortUrlResponse>>;
 
+/// <summary>
+/// Validates <see cref="CreateShortUrlRequest"/> instances.
+/// </summary>
 public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateShortUrlRequest>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CreateShortUrlRequestValidator"/> class.
+    /// </summary>
     public CreateShortUrlRequestValidator()
     {
         RuleFor(x => x.OriginalUrl)
