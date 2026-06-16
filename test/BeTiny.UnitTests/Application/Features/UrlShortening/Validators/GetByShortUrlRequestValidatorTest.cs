@@ -1,15 +1,15 @@
-using BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
+using BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 
 namespace BeTiny.UnitTests.Application.Features.UrlShortening.Validators;
 
 public class GetByShortUrlRequestValidatorTest
 {
-    private readonly GetByShortCodeRequestValidator _validator = new ();
+    private readonly GetByShortUrlRequestValidator _validator = new ();
 
     [Fact]
-    public void GivenValidShortCode_WhenValidated_ThenNoErrors()
+    public void GivenValidShortUrl_WhenValidated_ThenNoErrors()
     {
-        var request = new GetByShortCodeRequest(
+        var request = new GetByShortUrlRequest(
             "abcdefg",
             "UserAgent",
             "Referer",
@@ -20,15 +20,19 @@ public class GetByShortUrlRequestValidatorTest
 
         result.IsValid.Should().BeTrue();
     }
+    public static IEnumerable<object[]> InvalidCustomAliasData => [
+    
+        [""],
+        ["a".PadLeft(51, 'a')],
+        ["invalid alias!"]
+    ];
 
     [Theory]
-    [InlineData("")]
-    [InlineData("12345678")]
-    [InlineData("?")]
-    public void GivenInvalidShortCode_WhenValidated_TheErrors(string shortCode)
+    [MemberData(nameof(InvalidCustomAliasData))]
+    public void GivenInvalidShortUrl_WhenValidated_TheErrors(string shortUrl)
     {
-        var request = new GetByShortCodeRequest(
-            shortCode,
+        var request = new GetByShortUrlRequest(
+            shortUrl,
             "UserAgent",
             "Referer",
             "IpAddress"
@@ -38,6 +42,6 @@ public class GetByShortUrlRequestValidatorTest
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should()
-            .Contain(e => e.PropertyName == nameof(GetByShortCodeRequest.ShortCode));
+            .Contain(e => e.PropertyName == nameof(GetByShortUrlRequest.ShortUrl));
     }
 }

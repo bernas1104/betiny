@@ -10,6 +10,12 @@ namespace BeTiny.IOC.DependencyInjections;
 [ExcludeFromCodeCoverage]
 public static class ConfigureHandlers
 {
+    /// <summary>
+    /// Scans the Application assembly and registers request handlers, pipeline behaviors,
+    /// notification handlers, sender, and publisher via Scrutor.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection RegisterHandlers(this IServiceCollection services)
     {
         services.Scan(

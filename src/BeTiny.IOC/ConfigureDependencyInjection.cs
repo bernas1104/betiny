@@ -8,6 +8,12 @@ namespace BeTiny.IOC;
 [ExcludeFromCodeCoverage]
 public static class ConfigureDependencyInjection
 {
+  /// <summary>
+  /// Registers all application dependencies including databases, handlers, services, validators, and options.
+  /// </summary>
+  /// <param name="services">The service collection.</param>
+  /// <param name="configuration">The application configuration.</param>
+  /// <returns>The service collection for chaining.</returns>
   public static IServiceCollection RegisterBindings(
     this IServiceCollection services,
     IConfiguration configuration

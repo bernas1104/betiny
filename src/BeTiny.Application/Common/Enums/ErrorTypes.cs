@@ -7,5 +7,6 @@ public enum ErrorTypes
 {
     ValidationError,
     NotFoundError,
-    ExpiredError
+    ExpiredError,
+    ConflictError,
 }

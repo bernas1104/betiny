@@ -5,8 +5,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BeTiny.Infrastructure.Postgres.EntityConfig;
 
+/// <summary>
+/// Entity Framework Core configuration for the <see cref="ClickEvent"/> entity.
+/// </summary>
 public class ClickEventEntityConfig : IEntityTypeConfiguration<ClickEvent>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<ClickEvent> builder)
     {
         builder.HasKey(e => e.Id);

@@ -6,65 +6,70 @@ using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
 using BeTiny.Application.Events.ClickEvents.Create;
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
-namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortCode;
+namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 
 /// <summary>
-/// Query to get a URL by its short code.
+/// Query to get a URL by its short URL.
 /// </summary>
-public class GetByShortCodeQuery
-    : IRequestHandler<GetByShortCodeRequest, Result<GetByShortCodeResponse>>
+public class GetByShortUrlQuery
+    : IRequestHandler<GetByShortUrlRequest, Result<GetByShortUrlResponse>>
 {
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
     private readonly IIpResolver _ipResolver;
     private readonly IDeviceDetector _deviceDetector;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IPublisher _publisher;
-    private readonly ILogger<GetByShortCodeQuery> _logger;
+    private readonly ILogger<GetByShortUrlQuery> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GetByShortCodeQuery"/> class.
+    /// Initializes a new instance of the <see cref="GetByShortUrlQuery"/> class.
     /// </summary>
     /// <param name="shortUrlRepository">The repository for URL shortening.</param>
     /// <param name="ipResolver">The service for resolving IP addresses.</param>
     /// <param name="deviceDetector">The service for detecting device types.</param>
     /// <param name="publisher">The publisher for notifications.</param>
+    /// <param name="dateTimeProvider">The provider for date and time.</param>
     /// <param name="logger">The logger instance.</param>
-    public GetByShortCodeQuery(
+    public GetByShortUrlQuery(
         IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
         IIpResolver ipResolver,
         IDeviceDetector deviceDetector,
         IPublisher publisher,
-        ILogger<GetByShortCodeQuery> logger
+        IDateTimeProvider dateTimeProvider,
+        ILogger<GetByShortUrlQuery> logger
     )
     {
         _shortUrlRepository = shortUrlRepository;
         _ipResolver = ipResolver;
         _deviceDetector = deviceDetector;
         _publisher = publisher;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
     /// <summary>
-    /// Handles the query to get a URL by its short code.
+    /// Handles the query to get a URL by its short URL.
     /// </summary>
-    /// <param name="request">The request containing the short code.</param>
+    /// <param name="request">The request containing the short URL.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The result containing the URL information.</returns>
-    public async Task<Result<GetByShortCodeResponse>> Handle(
-        GetByShortCodeRequest request,
+    public async Task<Result<GetByShortUrlResponse>> Handle(
+        GetByShortUrlRequest request,
         CancellationToken cancellationToken
     )
     {
         var shortUrl = await _shortUrlRepository.GetByFilterAsync(
-            x => x.ShortCode.Equals(request.ShortCode),
+            x => x.AliasUrl == request.ShortUrl,
             cancellationToken
         );
 
-        if (shortUrl is null || shortUrl.IsExpired())
+        if (shortUrl is null || shortUrl.IsExpired(_dateTimeProvider))
         {
-            return Result<GetByShortCodeResponse>.Failure(CreateError(shortUrl));
+            return Result<GetByShortUrlResponse>.Failure(CreateError(shortUrl));
         }
         
         var country = await TryGetCountryByIpAsync(
@@ -79,8 +84,8 @@ public class GetByShortCodeQuery
             cancellationToken
         );
 
-        return Result<GetByShortCodeResponse>.Success(
-            new GetByShortCodeResponse(
+        return Result<GetByShortUrlResponse>.Success(
+            new GetByShortUrlResponse(
                 shortUrl.OriginalUrl,
                 shortUrl.ExpiresAt
             )
@@ -94,7 +99,7 @@ public class GetByShortCodeQuery
             return new Error(
                 ErrorTypes.NotFoundError,
                 null,
-                "Short code not found.",
+                "Short URL not found.",
                 ErrorSeverity.Medium
             );
         }
@@ -102,11 +107,13 @@ public class GetByShortCodeQuery
         return new Error(
             ErrorTypes.ExpiredError,
             null,
-            "Short code has expired.",
+            "Short URL has expired.",
             ErrorSeverity.Medium
         );
     }
 
+    // TODO - Method catches ALL exceptions, which is not ideal. Consider implementing more specific 
+    // error handling or using a more robust IP resolution service that provides better error information.
     private async Task<string> TryGetCountryByIpAsync(
         string? ipAddress,
         CancellationToken ct
@@ -129,7 +136,7 @@ public class GetByShortCodeQuery
 
     private ClickEvent CreateClickEvent(
         ShortUrl shortUrl,
-        GetByShortCodeRequest request,
+        GetByShortUrlRequest request,
         string country
     ) => new (
             shortUrl.Id,

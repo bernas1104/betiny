@@ -35,12 +35,4 @@ public interface IRepository<TEntity, TId, TIdType>
         Expression<Func<TEntity, bool>> filter,
         CancellationToken ct = default
     );
-
-    /// <summary>
-    /// Saves changes made to the repository. This method should be called after
-    /// performing add operations to persist the changes to the data store.
-    /// </summary>
-    /// <param name="ct">A cancellation token.</param>
-    /// <returns>The number of state entries written to the underlying database.</returns>
-    Task<int> SaveChanges(CancellationToken ct = default);
 }

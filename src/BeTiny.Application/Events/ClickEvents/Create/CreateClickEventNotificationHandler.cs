@@ -43,7 +43,6 @@ public class CreateClickEventNotificationHandler
         try
         {
             await _repository.AddAsync(notification.ClickEvent, ct);
-            await _repository.SaveChanges(ct);
 
             _logger.LogInformation(
                 "Successfully created click event with ID {ClickEventId}.",

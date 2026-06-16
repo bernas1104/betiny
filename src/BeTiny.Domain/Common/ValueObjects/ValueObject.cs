@@ -2,6 +2,12 @@ namespace BeTiny.Domain.Common.ValueObjects;
 
 public abstract class ValueObject
 {
+    /// <summary>
+    /// Compares two <see cref="ValueObject"/> instances for equality.
+    /// </summary>
+    /// <param name="left">The left value object.</param>
+    /// <param name="right">The right value object.</param>
+    /// <returns><c>true</c> if the two instances are equal; otherwise, <c>false</c>.</returns>
     protected static bool EqualOperator(ValueObject? left, ValueObject? right)
     {
         if (ReferenceEquals(left, null) ^ ReferenceEquals(right, null))
@@ -12,13 +18,24 @@ public abstract class ValueObject
         return ReferenceEquals(left, right) || left!.Equals(right!);
     }
 
+    /// <summary>
+    /// Compares two <see cref="ValueObject"/> instances for inequality.
+    /// </summary>
+    /// <param name="left">The left value object.</param>
+    /// <param name="right">The right value object.</param>
+    /// <returns><c>true</c> if the two instances are not equal; otherwise, <c>false</c>.</returns>
     protected static bool NotEqualOperator(ValueObject? left, ValueObject? right)
     {
         return !EqualOperator(left, right);
     }
 
+    /// <summary>
+    /// Gets the components that participate in equality comparisons.
+    /// </summary>
+    /// <returns>The components used for equality comparison.</returns>
     protected abstract IEnumerable<object> GetEqualityComponents();
 
+    /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
         if (obj == null || obj.GetType() != GetType())
@@ -32,6 +49,7 @@ public abstract class ValueObject
             .SequenceEqual(other.GetEqualityComponents());
     }
 
+    /// <inheritdoc/>
     public override int GetHashCode()
     {
         return GetEqualityComponents()

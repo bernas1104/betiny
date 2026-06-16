@@ -5,8 +5,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BeTiny.Infrastructure.Postgres.EntityConfig;
 
+/// <summary>
+/// Entity Framework Core configuration for the <see cref="ShortUrl"/> entity.
+/// </summary>
 public class ShortUrlEntityConfig : IEntityTypeConfiguration<ShortUrl>
 {
+    /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<ShortUrl> builder)
     {
         builder.ToTable("ShortUrls");
@@ -30,17 +34,18 @@ public class ShortUrlEntityConfig : IEntityTypeConfiguration<ShortUrl>
             .HasColumnName("OriginalUrl")
             .IsRequired();
 
-        builder.Property(x => x.ShortCode)
-            .HasMaxLength(7)
-            .HasColumnName("ShortCode")
+        builder.Property(x => x.AliasUrl)
+            .HasMaxLength(50)
+            .HasColumnName("AliasUrl")
             .IsRequired();
 
-        builder.HasIndex(x => x.ShortCode)
+        builder.HasIndex(x => x.AliasUrl)
             .IsUnique();
 
-        builder.Property(x => x.CustomAlias)
-            .HasMaxLength(50)
-            .HasColumnName("CustomAlias");
+        builder.Property(x => x.Type)
+            .HasConversion<string>()
+            .HasColumnName("Type")
+            .IsRequired();
 
         builder.Property(x => x.ExpiresAt)
             .HasColumnName("ExpiresAt");

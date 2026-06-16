@@ -4,8 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BeTiny.Infrastructure.Postgres.EntityConfig;
 
+/// <summary>
+/// Entity Framework Core configuration for the <see cref="User"/> entity.
+/// </summary>
 public class UserEntityConfig : IEntityTypeConfiguration<User>
 {
+    /// <inheritdoc/>
     public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<User> builder)
     {
         builder.ToTable("Users");

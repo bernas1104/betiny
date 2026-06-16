@@ -1,10 +1,13 @@
+using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
+using NSubstitute.ExceptionExtensions;
 
 namespace BeTiny.UnitTests.Application.Features.UrlShortening.Commands;
 
@@ -32,7 +35,7 @@ public class CreateShortUrlCommandTest
     }
 
     [Fact]
-    public async Task Handle_ShouldCreateShortUrl()
+    public async Task Handle_WhenNoCustomAliasProvided_ShouldCreateShortUrlFromShortCodeGenerator()
     {
         // Arrange
         var originalUrl = "https://www.example.com";
@@ -53,11 +56,164 @@ public class CreateShortUrlCommandTest
         await _shortUrlRepository.Received(1).AddAsync(
             Arg.Is<ShortUrl>(
                 s => s.OriginalUrl == originalUrl
-                    && s.ShortCode == shortCode
+                    && s.AliasUrl == shortCode
             ),
             Arg.Any<CancellationToken>()
         );
+    }
 
-        await _shortUrlRepository.Received(1).SaveChanges(Arg.Any<CancellationToken>());
+    [Fact]
+    public async Task Handle_WhenShortCodeThrowsDuplicateAliasUrlException_ShouldRetryWithNewShortCode()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var firstShortCode = "abc123";
+        var secondShortCode = "def456";
+
+        _shortCodeGenerator.GenerateShortCode()
+            .Returns(firstShortCode, secondShortCode);
+
+        _shortUrlRepository.AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>())
+            .Returns(
+                _ => throw new DuplicateAliasUrlException("A shortened URL with the same value already exists."),
+                _ => Task.CompletedTask
+            );
+
+        var request = new CreateShortUrlRequest(originalUrl);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.ShortUrl.Should().Be(secondShortCode);
+
+        await _shortCodeGenerator.Received(2).GenerateShortCode();
+
+        await _shortUrlRepository.Received(2)
+            .AddAsync(
+                Arg.Is<ShortUrl>(
+                    s => s.OriginalUrl == originalUrl
+                        && (s.AliasUrl == firstShortCode || s.AliasUrl == secondShortCode)
+                ),
+                Arg.Any<CancellationToken>()
+            );
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
+            .Should()
+            .ContainSingle();
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Information)
+            .Should()
+            .HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Handle_WhenShortCodeThrowsDuplicateAliasUrlExceptionMultipleTimes_ReturnsFailureResult()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var shortCode = "abc123";
+
+        _shortCodeGenerator.GenerateShortCode()
+            .Returns(shortCode);
+
+        _shortUrlRepository.AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(
+                new DuplicateAliasUrlException("A shortened URL with the same value already exists.")
+            );
+
+        var request = new CreateShortUrlRequest(originalUrl);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ConflictError);
+
+        await _shortCodeGenerator.Received(CreateShortUrlCommand.MaxShortCodeGenerationAttempts)
+            .GenerateShortCode();
+
+        await _shortUrlRepository.Received(CreateShortUrlCommand.MaxShortCodeGenerationAttempts)
+            .AddAsync(
+                Arg.Is<ShortUrl>(
+                    s => s.OriginalUrl == originalUrl
+                        && s.AliasUrl == shortCode
+                ),
+                Arg.Any<CancellationToken>()
+            );
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
+            .Should()
+            .HaveCount(CreateShortUrlCommand.MaxShortCodeGenerationAttempts);
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Information)
+            .Should()
+            .HaveCount(CreateShortUrlCommand.MaxShortCodeGenerationAttempts);
+    }
+
+    [Fact]
+    public async Task Handle_WhenCustomAliasProvided_ShouldCreateShortUrlWithCustomAlias()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var customAlias = "my-alias";
+
+        var request = new CreateShortUrlRequest(originalUrl, customAlias);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.ShortUrl.Should().Be(customAlias);
+
+        await _shortCodeGenerator.DidNotReceive().GenerateShortCode();
+
+        await _shortUrlRepository.Received(1)
+            .AddAsync(
+                Arg.Is<ShortUrl>(
+                    s => s.OriginalUrl == originalUrl
+                        && s.AliasUrl == customAlias
+                ),
+                Arg.Any<CancellationToken>()
+            );
+    }
+
+    [Fact]
+    public async Task Handle_WhenAliasUrlAlreadyExists_ShouldReturnFailureResult()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var customAlias = "existing-alias";
+
+        _shortUrlRepository.AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(
+                new DuplicateAliasUrlException("A custom alias already exists for the provided value.")
+            );
+
+        var request = new CreateShortUrlRequest(originalUrl, customAlias);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ConflictError);
+
+        await _shortUrlRepository.Received(1)
+            .AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>());
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
+            .Should()
+            .ContainSingle();
     }
 }

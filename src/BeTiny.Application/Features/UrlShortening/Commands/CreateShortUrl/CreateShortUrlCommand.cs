@@ -1,8 +1,11 @@
+using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Enums;
+using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
@@ -19,6 +22,8 @@ public class CreateShortUrlCommand :
     private readonly IShortCodeGenerator _shortCodeGenerator;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<CreateShortUrlCommand> _logger;
+
+    public const int MaxShortCodeGenerationAttempts = 10;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateShortUrlCommand"/> class.
@@ -50,22 +55,96 @@ public class CreateShortUrlCommand :
         CancellationToken cancellationToken
     )
     {
-        var shortCode = await _shortCodeGenerator.GenerateShortCode();
+        var created = false;
+        ShortUrl shortUrl;
+        if (command.CustomAlias is not null)
+        {
+            shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.CustomAlias);
+            shortUrl.SetAliasUrl(command.CustomAlias);
+            shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
 
-        var shortUrl = new ShortUrl(command.OriginalUrl, shortCode);
-        shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
+            created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
+        }
+        else
+        {
+            shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.ShortCode);
+            shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
+            
+            var attempts = 0;
+            while (!created && attempts < MaxShortCodeGenerationAttempts)
+            {
+                var shortCode = await _shortCodeGenerator.GenerateShortCode();
+                shortUrl.SetAliasUrl(shortCode);
+                
+                created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
+                attempts++;
+            }
+        }
 
-        await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
-        await _shortUrlRepository.SaveChanges(cancellationToken);
+        if (!created)
+        {
+            return Result<CreateShortUrlResponse>.Failure(
+                command.CustomAlias is not null
+                    ? CreateConflictError(command.CustomAlias)
+                    : CreateMaxAttemptsExceededError()
+            );
+        }
 
         _logger.LogInformation(
-            "Short URL for {OriginalUrl} created: {ShortUrl}",
+            "Short URL for {OriginalUrl} created: {AliasUrl}",
             command.OriginalUrl,
-            shortUrl.ShortCode
+            shortUrl.AliasUrl
         );
 
         return Result<CreateShortUrlResponse>.Success(
-            new CreateShortUrlResponse(shortUrl.ShortCode)
+            new CreateShortUrlResponse(shortUrl.AliasUrl)
+        );
+    }
+
+    private async Task<bool> TryAddShortUrlAsync(ShortUrl shortUrl, CancellationToken cancellationToken)
+    {
+        try
+        {   
+            await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
+            return true;
+        }
+        catch (DuplicateAliasUrlException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to create short URL for {OriginalUrl}. A shortened URL with the same value already exists.",
+                shortUrl.OriginalUrl
+            );
+
+            if (shortUrl.Type == AliasUrlType.ShortCode)
+            {
+                _logger.LogInformation(
+                    "Retrying short URL creation for {OriginalUrl} with a new short code.",
+                    shortUrl.OriginalUrl
+                );
+            }
+
+            return false;
+        }
+    }
+
+    private static Error CreateConflictError(string customAlias)
+    {
+        return new Error(
+            ErrorTypes.ConflictError,
+            nameof(customAlias),
+            "An URL with the same custom alias already exists.",
+            ErrorSeverity.Medium
+        );
+    }
+
+    private static Error CreateMaxAttemptsExceededError()
+    {
+        return new Error(
+            ErrorTypes.ConflictError,
+            null,
+            "Failed to generate a unique short code after multiple attempts. Please try again.",
+            ErrorSeverity.Medium
         );
     }
 }
