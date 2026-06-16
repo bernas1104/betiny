@@ -2,7 +2,6 @@ using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Interfaces.Repositories;
-using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
 using BeTiny.Application.Events.ClickEvents.Create;
 using BeTiny.Domain.Entities;
@@ -19,8 +18,6 @@ public class GetByShortUrlQuery
     : IRequestHandler<GetByShortUrlRequest, Result<GetByShortUrlResponse>>
 {
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
-    private readonly IIpResolver _ipResolver;
-    private readonly IDeviceDetector _deviceDetector;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IPublisher _publisher;
     private readonly ILogger<GetByShortUrlQuery> _logger;
@@ -29,25 +26,19 @@ public class GetByShortUrlQuery
     /// Initializes a new instance of the <see cref="GetByShortUrlQuery"/> class.
     /// </summary>
     /// <param name="shortUrlRepository">The repository for URL shortening.</param>
-    /// <param name="ipResolver">The service for resolving IP addresses.</param>
-    /// <param name="deviceDetector">The service for detecting device types.</param>
-    /// <param name="publisher">The publisher for notifications.</param>
     /// <param name="dateTimeProvider">The provider for date and time.</param>
+    /// <param name="publisher">The publisher for notifications.</param>
     /// <param name="logger">The logger instance.</param>
     public GetByShortUrlQuery(
         IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
-        IIpResolver ipResolver,
-        IDeviceDetector deviceDetector,
-        IPublisher publisher,
         IDateTimeProvider dateTimeProvider,
+        IPublisher publisher,
         ILogger<GetByShortUrlQuery> logger
     )
     {
         _shortUrlRepository = shortUrlRepository;
-        _ipResolver = ipResolver;
-        _deviceDetector = deviceDetector;
-        _publisher = publisher;
         _dateTimeProvider = dateTimeProvider;
+        _publisher = publisher;
         _logger = logger;
     }
 
@@ -69,19 +60,28 @@ public class GetByShortUrlQuery
 
         if (shortUrl is null || shortUrl.IsExpired(_dateTimeProvider))
         {
+            _logger.LogWarning(
+                "Short URL '{ShortUrl}' not found or expired.",
+                request.ShortUrl
+            );
+
             return Result<GetByShortUrlResponse>.Failure(CreateError(shortUrl));
         }
-        
-        var country = await TryGetCountryByIpAsync(
-            request.IpAddress,
+
+        await _publisher.Publish(
+            new CreateClickEventNotification(
+                shortUrl,
+                request.UserAgent,
+                request.Referer,
+                request.IpAddress
+            ),
             cancellationToken
         );
 
-        var clickEvent = CreateClickEvent(shortUrl, request, country);
-
-        await _publisher.Publish(
-            new CreateClickEventNotification(clickEvent),
-            cancellationToken
+        _logger.LogInformation(
+            "Short URL '{ShortUrl}' accessed successfully. Redirecting user to original URL. {OriginalUrl}",
+            request.ShortUrl,
+            shortUrl.OriginalUrl
         );
 
         return Result<GetByShortUrlResponse>.Success(
@@ -111,39 +111,4 @@ public class GetByShortUrlQuery
             ErrorSeverity.Medium
         );
     }
-
-    // TODO - Method catches ALL exceptions, which is not ideal. Consider implementing more specific 
-    // error handling or using a more robust IP resolution service that provides better error information.
-    private async Task<string> TryGetCountryByIpAsync(
-        string? ipAddress,
-        CancellationToken ct
-    )
-    {
-        try
-        {
-            return await _ipResolver.GetCountryByIpAsync(ipAddress, ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(
-                ex,
-                "Failed to resolve country for IP address"
-            );
-            
-            return "Unknown";
-        }
-    }
-
-    private ClickEvent CreateClickEvent(
-        ShortUrl shortUrl,
-        GetByShortUrlRequest request,
-        string country
-    ) => new (
-            shortUrl.Id,
-            request.IpAddress ?? "Unknown",
-            country,
-            request.UserAgent ?? "Unknown",
-            request.Referer ?? "Unknown",
-            _deviceDetector.DetectDeviceType(request.UserAgent)
-        );
 }

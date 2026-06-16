@@ -1,4 +1,5 @@
 using BeTiny.Application.Common.Enums;
+using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Models;
 
 namespace BeTiny.UnitTests.Application.Common.Models;
