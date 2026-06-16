@@ -112,6 +112,53 @@ public class CreateShortUrlCommandTest
     }
 
     [Fact]
+    public async Task Handle_WhenShortCodeThrowsDuplicateAliasUrlExceptionMultipleTimes_ShouldReturnFailureResult()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var shortCode = "abc123";
+
+        _shortCodeGenerator.GenerateShortCode()
+            .Returns(shortCode);
+
+        _shortUrlRepository.AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(
+                new DuplicateAliasUrlException("A shortened URL with the same value already exists.")
+            );
+
+        var request = new CreateShortUrlRequest(originalUrl);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ConflictError);
+
+        await _shortCodeGenerator.Received(CreateShortUrlCommand.MaxShortCodeGenerationAttempts)
+            .GenerateShortCode();
+
+        await _shortUrlRepository.Received(CreateShortUrlCommand.MaxShortCodeGenerationAttempts)
+            .AddAsync(
+                Arg.Is<ShortUrl>(
+                    s => s.OriginalUrl == originalUrl
+                        && s.AliasUrl == shortCode
+                ),
+                Arg.Any<CancellationToken>()
+            );
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
+            .Should()
+            .HaveCount(CreateShortUrlCommand.MaxShortCodeGenerationAttempts);
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Information)
+            .Should()
+            .HaveCount(CreateShortUrlCommand.MaxShortCodeGenerationAttempts);
+    }
+
+    [Fact]
     public async Task Handle_WhenCustomAliasProvided_ShouldCreateShortUrlWithCustomAlias()
     {
         // Arrange

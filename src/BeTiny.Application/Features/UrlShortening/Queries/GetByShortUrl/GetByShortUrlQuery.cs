@@ -112,6 +112,8 @@ public class GetByShortUrlQuery
         );
     }
 
+    // TODO - Method catches ALL exceptions, which is not ideal. Consider implementing more specific 
+    // error handling or using a more robust IP resolution service that provides better error information.
     private async Task<string> TryGetCountryByIpAsync(
         string? ipAddress,
         CancellationToken ct

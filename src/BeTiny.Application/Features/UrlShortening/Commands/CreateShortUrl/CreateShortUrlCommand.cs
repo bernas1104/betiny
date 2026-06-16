@@ -23,6 +23,8 @@ public class CreateShortUrlCommand :
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<CreateShortUrlCommand> _logger;
 
+    public const int MaxShortCodeGenerationAttempts = 10;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateShortUrlCommand"/> class.
     /// </summary>
@@ -68,35 +70,34 @@ public class CreateShortUrlCommand :
             shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.ShortCode);
             shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
             
-            while (!created)
+            var attempts = 0;
+            while (!created && attempts < MaxShortCodeGenerationAttempts)
             {
                 var shortCode = await _shortCodeGenerator.GenerateShortCode();
                 shortUrl.SetAliasUrl(shortCode);
                 
                 created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
+                attempts++;
             }
         }
 
-        if (created)
+        if (!created)
         {
-            _logger.LogInformation(
-                "Short URL for {OriginalUrl} created: {AliasUrl}",
-                command.OriginalUrl,
-                shortUrl.AliasUrl
-            );
-
-            return Result<CreateShortUrlResponse>.Success(
-                new CreateShortUrlResponse(shortUrl.AliasUrl)
+            return Result<CreateShortUrlResponse>.Failure(
+                command.CustomAlias is not null
+                    ? CreateConflictError(command.CustomAlias)
+                    : CreateMaxAttemptsExceededError()
             );
         }
 
-        return Result<CreateShortUrlResponse>.Failure(
-            new Error(
-                ErrorTypes.ConflictError,
-                nameof(command.CustomAlias),
-                "A short URL with the same value already exists.",
-                ErrorSeverity.Medium
-            )
+        _logger.LogInformation(
+            "Short URL for {OriginalUrl} created: {AliasUrl}",
+            command.OriginalUrl,
+            shortUrl.AliasUrl
+        );
+
+        return Result<CreateShortUrlResponse>.Success(
+            new CreateShortUrlResponse(shortUrl.AliasUrl)
         );
     }
 
@@ -125,5 +126,25 @@ public class CreateShortUrlCommand :
 
             return false;
         }
+    }
+
+    private static Error CreateConflictError(string customAlias)
+    {
+        return new Error(
+            ErrorTypes.ConflictError,
+            nameof(customAlias),
+            "An URL with the same custom alias already exists.",
+            ErrorSeverity.Medium
+        );
+    }
+
+    private static Error CreateMaxAttemptsExceededError()
+    {
+        return new Error(
+            ErrorTypes.ConflictError,
+            null,
+            "Failed to generate a unique short code after multiple attempts. Please try again.",
+            ErrorSeverity.Medium
+        );
     }
 }

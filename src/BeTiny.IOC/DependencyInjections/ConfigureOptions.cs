@@ -18,7 +18,8 @@ public static class ConfigureOptions
         IConfiguration configuration
     )
     {
-        //
+        // Place to register options configuration from app settings, e.g.:
+        // services.Configure<MyOptions>(configuration.GetSection("MyOptions"));
 
         return services;
     }
