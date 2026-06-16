@@ -112,7 +112,7 @@ public class CreateShortUrlCommandTest
     }
 
     [Fact]
-    public async Task Handle_WhenShortCodeThrowsDuplicateAliasUrlExceptionMultipleTimes_ShouldReturnFailureResult()
+    public async Task Handle_WhenShortCodeThrowsDuplicateAliasUrlExceptionMultipleTimes_ReturnsFailureResult()
     {
         // Arrange
         var originalUrl = "https://www.example.com";
