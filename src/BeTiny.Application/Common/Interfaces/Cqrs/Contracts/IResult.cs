@@ -7,7 +7,6 @@ namespace BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 /// </summary>
 public interface IResult
 {
-    object? Value { get; }
     IReadOnlyCollection<Error>? Errors { get; init; }
     bool IsSuccess { get; }
 }

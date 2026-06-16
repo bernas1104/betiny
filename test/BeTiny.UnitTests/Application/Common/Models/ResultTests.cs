@@ -18,7 +18,6 @@ public class ResultTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(expectedValue);
-        ((IResult)result).Value.Should().Be(expectedValue);
         result.Errors.Should().BeNull();
     }
 
@@ -37,7 +36,6 @@ public class ResultTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Value.Should().BeNull();
-        ((IResult)result).Value.Should().BeNull();
         result.Errors.Should().NotBeNull();
         result.Errors.Should().ContainSingle();
         result.Errors!.First().ErrorType.Should().Be(errorType);

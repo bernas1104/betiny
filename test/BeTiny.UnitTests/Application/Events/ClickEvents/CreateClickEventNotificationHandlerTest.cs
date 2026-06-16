@@ -65,7 +65,7 @@ public class CreateClickEventNotificationHandlerTest
                     "http://example.com",
                     f.PickRandom<AliasUrlType>()
                 )
-            ),
+            ).Generate(),
             _faker.Internet.UserAgent(),
             "referer",
             _faker.Internet.Ip()
@@ -86,14 +86,6 @@ public class CreateClickEventNotificationHandlerTest
                 Arg.Any<CancellationToken>()
             );
     }
-
-    // TODO - Test IP resolution failure and cancellation scenarios, which currently are not covered
-    // due to the TryGetCountryByIpAsync method being private. Consider refactoring to allow better 
-    // testability of this logic, such as by extracting it into a separate service or making it
-    // protected virtual for testing purposes. This would enable us to verify that the handler 
-    // correctly handles IP resolution failures and cancellations, which are important scenarios for 
-    // ensuring the robustness of click event tracking. Additionally, we should ensure that appropriate 
-    // logging occurs in these scenarios, which can be verified by checking the logger calls in the tests.
 
     [Fact]
     public async Task TryGetCountryByIpAsync_WhenIpResolutionFails_ThenReturnsUnknown()
@@ -125,6 +117,12 @@ public class CreateClickEventNotificationHandlerTest
             )
             .Should()
             .ContainSingle();
+
+        await _repository.Received(1)
+            .AddAsync(
+                Arg.Is<ClickEvent>(ce => ce.ShortUrlId == notification.ShortUrl.Id),
+                Arg.Any<CancellationToken>()
+            );
     }
 
     [Fact]
