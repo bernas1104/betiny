@@ -145,17 +145,17 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
 
         var shortUrl = commandResult.Value!.ShortUrl!;
 
-        var createResponse = await Client.GetAsync($"/api/v1/UrlShortener/{shortUrl}");
+        var response = await Client.GetAsync($"/api/v1/UrlShortener/{shortUrl}");
         
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
     }
 
     [Fact]
     public async Task GetByShortUrl_ReturnsNotFound_WhenShortUrlDoesNotExist()
     {
         var shortUrl = "notfound";
-        var createResponse = await Client.GetAsync($"/api/v1/UrlShortener/{shortUrl}");
+        var response = await Client.GetAsync($"/api/v1/UrlShortener/{shortUrl}");
         
-        createResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

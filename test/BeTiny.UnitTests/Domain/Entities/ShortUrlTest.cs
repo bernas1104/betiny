@@ -26,7 +26,7 @@ public sealed class ShortUrlTest
         _dateTimeProvider.UtcNow.Returns(baseUtc);
 
         shortUrl.SetExpiration(futureDate, _dateTimeProvider);
-        var isExpired = shortUrl.IsExpired();
+        var isExpired = shortUrl.IsExpired(_dateTimeProvider);
 
         isExpired.Should().BeFalse();
         shortUrl.ExpiresAt.Should().NotBeNull();
@@ -41,10 +41,10 @@ public sealed class ShortUrlTest
 
         var baseUtc = DateTime.UtcNow;
         var pastDate = baseUtc.AddDays(-1);
-        _dateTimeProvider.UtcNow.Returns(baseUtc.AddDays(-2));
+        _dateTimeProvider.UtcNow.Returns(baseUtc.AddDays(-2), baseUtc);
 
         shortUrl.SetExpiration(pastDate, _dateTimeProvider);
-        var isExpired = shortUrl.IsExpired();
+        var isExpired = shortUrl.IsExpired(_dateTimeProvider);
 
         isExpired.Should().BeTrue();
         shortUrl.ExpiresAt.Should().NotBeNull();
@@ -83,6 +83,62 @@ public sealed class ShortUrlTest
         act.Should().Throw<ArgumentException>()
             .WithMessage("The ExpiresAt must be a future date and time.*")
             .WithParameterName("expiresAt");
+    }
+
+    [Fact]
+    public void IsExpired_ReturnsFalse_WhenExpiresAtIsNull()
+    {
+        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("abc123");
+
+        var isExpired = shortUrl.IsExpired(_dateTimeProvider);
+
+        isExpired.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsExpired_ReturnsTrue_WhenExpiresAtIsInThePast()
+    {
+        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("abc123");
+
+        var baseUtc = DateTime.UtcNow;
+        var futureDate = baseUtc.AddDays(1);
+        
+        _dateTimeProvider.UtcNow
+            .Returns(baseUtc, baseUtc.AddDays(2));
+
+        shortUrl.SetExpiration(futureDate, _dateTimeProvider);
+        var isExpired = shortUrl.IsExpired(_dateTimeProvider);
+
+        isExpired.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsExpired_ReturnsFalse_WhenExpiresAtIsInTheFuture()
+    {
+        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("abc123");
+
+        var baseUtc = DateTime.UtcNow;
+        var futureDate = baseUtc.AddDays(1);
+        _dateTimeProvider.UtcNow.Returns(baseUtc);
+
+        shortUrl.SetExpiration(futureDate, _dateTimeProvider);
+        var isExpired = shortUrl.IsExpired(_dateTimeProvider);
+
+        isExpired.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SetAliasUrl_SetsAliasUrl_WhenValidShortCode()
+    {
+        var shortUrl = new ShortUrl("https://example.com", AliasUrlType.ShortCode);
+        var validShortCode = "abc123";
+
+        shortUrl.SetAliasUrl(validShortCode);
+
+        shortUrl.AliasUrl.Should().Be(validShortCode);
     }
 
     [Fact]

@@ -99,6 +99,8 @@ The project follows DDD-inspired patterns with these base classes in `BeTiny.Dom
 
 Concrete entities (e.g., `User : AggregateRoot<UserId, Guid>`) use a typed ID value object (e.g., `UserId : AggregateRootId<Guid>`) created via a static factory (`UserId.CreateUnique()`).
 
+`ShortUrl` has a unified `AliasUrl` property (required in the database, max 50 chars) with an `AliasUrlType` enum (`ShortCode`, `CustomAlias`) to distinguish auto-generated short codes from user-provided custom aliases. `SetAliasUrl` enforces different validation rules: short codes max 7 characters, custom aliases must match `^[A-Za-z0-9_-]{3,50}$`. `IsExpired` and `SetExpiration` accept `IDateTimeProvider` for testability.
+
 ### CQRS & Pipeline
 
 The project uses a **custom lightweight CQRS** implementation in `BeTiny.Application.Common.Cqrs`:
@@ -123,8 +125,8 @@ Notifications run all matching handlers in parallel via `Task.WaitAll`. Individu
 
 ### Repository Pattern
 
-- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`AddAsync`, `GetByFilterAsync`, `AnyAsync`, `SaveChanges`)
-- **`GenericRepository<TEntity, TId, TIdType>`** — EF Core implementation in Infrastructure
+- **`IRepository<TEntity, TId, TIdType>`** — generic read/write contract (`AddAsync`, `GetByFilterAsync`)
+- **`GenericRepository<TEntity, TId, TIdType>`** — EF Core implementation in Infrastructure; `AddAsync` catches Postgres unique-constraint violations (`23505` for `IX_ShortUrls_AliasUrl`) and throws `DuplicateAliasUrlException`
 - Domain entities are accessed through the generic interface; specialized repositories can extend it if needed
 
 ### EF Core Configuration
@@ -172,7 +174,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
   - `ValidationError` → 400 Bad Request
   - `NotFoundError` → 404 Not Found
   - `ExpiredError` → 410 Gone
-  - `ConflictError` → 500 Internal Server Error (mapping to be updated)
+  - `ConflictError` → 409 Conflict
 - Exceptions reserved for truly exceptional / infrastructure failures
 - Log via `ILogger<T>` (structured logging with Serilog planned)
 

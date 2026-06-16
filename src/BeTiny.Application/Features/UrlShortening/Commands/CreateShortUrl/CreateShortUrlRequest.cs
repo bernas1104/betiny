@@ -40,7 +40,7 @@ public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateSho
             .Must(dt => !dt.HasValue || dt.Value.Kind == DateTimeKind.Utc)
             .WithMessage("The ExpiresAt must be in UTC.")
             .GreaterThan(DateTime.UtcNow)
-            .When(x => x.ExpiresAt.HasValue)
-            .WithMessage("The ExpiresAt must be a future date and time.");
+            .WithMessage("The ExpiresAt must be a future date and time.")
+            .When(x => x.ExpiresAt.HasValue);
     }
 }

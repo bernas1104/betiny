@@ -19,6 +19,7 @@ public class GetByShortUrlQueryTest
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
     private readonly IIpResolver _ipResolver;
     private readonly IDeviceDetector _deviceDetector;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IPublisher _publisher;
     private readonly ILogger<GetByShortUrlQuery> _logger = Substitute.For<ILogger<GetByShortUrlQuery>>();
     private readonly GetByShortUrlQuery _query;
@@ -29,6 +30,7 @@ public class GetByShortUrlQueryTest
         _shortUrlRepository = Substitute.For<IRepository<ShortUrl, ShortUrlId, Guid>>();
         _ipResolver = Substitute.For<IIpResolver>();
         _deviceDetector = Substitute.For<IDeviceDetector>();
+        _dateTimeProvider = Substitute.For<IDateTimeProvider>();
         _publisher = Substitute.For<IPublisher>();
 
         _query = new GetByShortUrlQuery(
@@ -36,6 +38,7 @@ public class GetByShortUrlQueryTest
             _ipResolver,
             _deviceDetector,
             _publisher,
+            _dateTimeProvider,
             _logger
         );
     }
@@ -242,11 +245,16 @@ public class GetByShortUrlQueryTest
         // Arrange
         var expiredShortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
         expiredShortUrl.SetAliasUrl("expired");
+
+        var baseUtc = DateTime.UtcNow;
+
+        _dateTimeProvider.UtcNow
+            .Returns(
+                _ => baseUtc.AddDays(-1),
+                _ => baseUtc.AddMinutes(-5)
+            );
         
-        var dateTimeProvider = Substitute.For<IDateTimeProvider>();
-        dateTimeProvider.UtcNow.Returns(DateTime.UtcNow.AddDays(-1));
-        
-        expiredShortUrl.SetExpiration(DateTime.UtcNow.AddMinutes(-10), dateTimeProvider);
+        expiredShortUrl.SetExpiration(baseUtc.AddMinutes(-10), _dateTimeProvider);
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),

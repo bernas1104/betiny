@@ -6,6 +6,7 @@ using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
 using BeTiny.Application.Events.ClickEvents.Create;
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
@@ -20,6 +21,7 @@ public class GetByShortUrlQuery
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
     private readonly IIpResolver _ipResolver;
     private readonly IDeviceDetector _deviceDetector;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IPublisher _publisher;
     private readonly ILogger<GetByShortUrlQuery> _logger;
 
@@ -30,12 +32,14 @@ public class GetByShortUrlQuery
     /// <param name="ipResolver">The service for resolving IP addresses.</param>
     /// <param name="deviceDetector">The service for detecting device types.</param>
     /// <param name="publisher">The publisher for notifications.</param>
+    /// <param name="dateTimeProvider">The provider for date and time.</param>
     /// <param name="logger">The logger instance.</param>
     public GetByShortUrlQuery(
         IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
         IIpResolver ipResolver,
         IDeviceDetector deviceDetector,
         IPublisher publisher,
+        IDateTimeProvider dateTimeProvider,
         ILogger<GetByShortUrlQuery> logger
     )
     {
@@ -43,6 +47,7 @@ public class GetByShortUrlQuery
         _ipResolver = ipResolver;
         _deviceDetector = deviceDetector;
         _publisher = publisher;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
@@ -62,7 +67,7 @@ public class GetByShortUrlQuery
             cancellationToken
         );
 
-        if (shortUrl is null || shortUrl.IsExpired())
+        if (shortUrl is null || shortUrl.IsExpired(_dateTimeProvider))
         {
             return Result<GetByShortUrlResponse>.Failure(CreateError(shortUrl));
         }

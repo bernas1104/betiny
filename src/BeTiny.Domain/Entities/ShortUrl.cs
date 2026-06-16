@@ -55,7 +55,8 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     [GeneratedRegex("^[A-Za-z0-9_-]{3,50}$")]
     private static partial Regex CustomAliasRegex();
 
-    public bool IsExpired() => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
+    public bool IsExpired(IDateTimeProvider dateTimeProvider)
+        => ExpiresAt.HasValue && dateTimeProvider.UtcNow > ExpiresAt.Value;
 
     public void SetExpiration(DateTime? expiresAt, IDateTimeProvider dateTimeProvider)
     {

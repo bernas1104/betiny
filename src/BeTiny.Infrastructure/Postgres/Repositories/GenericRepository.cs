@@ -34,7 +34,7 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         catch (DbUpdateException ex)
             when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") // Unique violation
         {
-            if (IsUniqueConstraintViolation(pgEx, "AliasUrl"))
+            if (IsUniqueConstraintViolation(pgEx, "IX_ShortUrls_AliasUrl"))
                 throw new DuplicateAliasUrlException(
                     $"A shortened URL already exists for the provided value."
                 );
@@ -44,7 +44,7 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
     }
 
     private bool IsUniqueConstraintViolation(PostgresException pgEx, string constraintName)
-        => pgEx.ConstraintName!.Contains(constraintName, StringComparison.OrdinalIgnoreCase);
+        => pgEx.ConstraintName!.Equals(constraintName, StringComparison.OrdinalIgnoreCase);
 
     public Task<TEntity?> GetByFilterAsync(
         Expression<Func<TEntity, bool>> filter,

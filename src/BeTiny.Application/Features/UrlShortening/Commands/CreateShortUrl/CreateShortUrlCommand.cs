@@ -66,12 +66,12 @@ public class CreateShortUrlCommand :
         else
         {
             shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.ShortCode);
+            shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
             
             while (!created)
             {
                 var shortCode = await _shortCodeGenerator.GenerateShortCode();
                 shortUrl.SetAliasUrl(shortCode);
-                shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
                 
                 created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
             }

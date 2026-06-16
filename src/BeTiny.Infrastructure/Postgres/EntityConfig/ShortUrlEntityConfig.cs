@@ -33,7 +33,7 @@ public class ShortUrlEntityConfig : IEntityTypeConfiguration<ShortUrl>
         builder.Property(x => x.AliasUrl)
             .HasMaxLength(50)
             .HasColumnName("AliasUrl")
-            .IsRequired(false);
+            .IsRequired();
 
         builder.HasIndex(x => x.AliasUrl)
             .IsUnique();

@@ -7,7 +7,7 @@ public class GetByShortUrlRequestValidatorTest
     private readonly GetByShortUrlRequestValidator _validator = new ();
 
     [Fact]
-    public void GivenValidShortCode_WhenValidated_ThenNoErrors()
+    public void GivenValidShortUrl_WhenValidated_ThenNoErrors()
     {
         var request = new GetByShortUrlRequest(
             "abcdefg",
