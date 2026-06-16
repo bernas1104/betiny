@@ -66,6 +66,10 @@ public class CreateClickEventNotificationHandler
                 clickEvent.Id
             );
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {   
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(

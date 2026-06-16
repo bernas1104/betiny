@@ -38,7 +38,7 @@ public class CreateClickEventNotificationHandlerTest
                     "http://example.com",
                     f.PickRandom<AliasUrlType>()
                 )
-            ),
+            ).Generate(),
             _faker.Internet.UserAgent(),
             "referer",
             _faker.Internet.Ip()

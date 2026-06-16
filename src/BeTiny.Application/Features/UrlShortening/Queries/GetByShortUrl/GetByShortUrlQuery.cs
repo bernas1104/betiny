@@ -79,9 +79,8 @@ public class GetByShortUrlQuery
         );
 
         _logger.LogInformation(
-            "Short URL '{ShortUrl}' accessed successfully. Redirecting user to original URL. {OriginalUrl}",
-            request.ShortUrl,
-            shortUrl.OriginalUrl
+            "Short URL '{ShortUrl}' accessed successfully. Redirecting user to original URL.",
+            request.ShortUrl
         );
 
         return Result<GetByShortUrlResponse>.Success(

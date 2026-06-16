@@ -12,7 +12,6 @@ public class Result<TResponse> : IResult
 {
     [JsonPropertyOrder(-3)]
     public TResponse? Value { get; init; }
-    // object? IResult.Value => Value;
     [JsonPropertyOrder(-2)]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyCollection<Error>? Errors { get; init; }
