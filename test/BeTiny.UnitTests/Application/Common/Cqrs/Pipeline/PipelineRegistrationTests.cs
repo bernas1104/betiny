@@ -6,7 +6,6 @@ using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 using BeTiny.IOC.DependencyInjections;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs.Pipeline;
 

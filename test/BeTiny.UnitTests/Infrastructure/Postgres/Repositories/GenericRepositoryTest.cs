@@ -1,6 +1,5 @@
 using BeTiny.Domain.Entities;
 using BeTiny.Domain.Enums;
-using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.ValueObjects;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.Infrastructure.Postgres.Repositories;
