@@ -20,15 +20,19 @@ public class GetByShortUrlRequestValidatorTest
 
         result.IsValid.Should().BeTrue();
     }
+    public static IEnumerable<object[]> InvalidCustomAliasData => [
+    
+        [""],
+        ["a".PadLeft(51, 'a')],
+        ["invalid alias!"]
+    ];
 
     [Theory]
-    [InlineData("")]
-    [InlineData("12345678")]
-    [InlineData("?")]
-    public void GivenInvalidShortCode_WhenValidated_TheErrors(string shortCode)
+    [MemberData(nameof(InvalidCustomAliasData))]
+    public void GivenInvalidShortUrl_WhenValidated_TheErrors(string shortUrl)
     {
         var request = new GetByShortUrlRequest(
-            shortCode,
+            shortUrl,
             "UserAgent",
             "Referer",
             "IpAddress"
@@ -38,6 +42,6 @@ public class GetByShortUrlRequestValidatorTest
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should()
-            .Contain(e => e.PropertyName == nameof(GetByShortUrlRequest.ShortCode));
+            .Contain(e => e.PropertyName == nameof(GetByShortUrlRequest.ShortUrl));
     }
 }

@@ -1,8 +1,11 @@
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Enums;
+using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.ValueObjects;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.Infrastructure.Postgres.Repositories;
 using BeTiny.UnitTests.Fixtures;
+using Bogus;
 
 namespace BeTiny.UnitTests.Infrastructure.Postgres.Repositories;
 
@@ -10,6 +13,7 @@ public sealed class GenericRepositoryTest
 {
     private readonly BeTinyContext _context;
     private readonly GenericRepository<ShortUrl, ShortUrlId, Guid> _repository;
+    private readonly Faker _faker = new ();
 
     public GenericRepositoryTest()
     {
@@ -20,22 +24,22 @@ public sealed class GenericRepositoryTest
     [Fact]
     public async Task GetByFilterAsync_WhenEntityMatchesFilter_ReturnsEntity()
     {
-        var shortUrl = new ShortUrl("https://example.com");
-        shortUrl.SetShortCode("foo");
+        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("foo");
 
         _context.ShortUrls.Add(shortUrl);
-        await _repository.SaveChanges();
+        _context.SaveChanges();
 
-        var result = await _repository.GetByFilterAsync(e => e.ShortCode == "foo");
+        var result = await _repository.GetByFilterAsync(e => e.AliasUrl == "foo");
 
         result.Should().NotBeNull();
-        result!.ShortCode.Should().Be("foo");
+        result!.AliasUrl.Should().Be("foo");
     }
 
     [Fact]
     public async Task GetByFilterAsync_WhenNoEntityMatchesFilter_ReturnsNull()
     {
-        var result = await _repository.GetByFilterAsync(e => e.ShortCode == "nonexistent");
+        var result = await _repository.GetByFilterAsync(e => e.AliasUrl == "nonexistent");
 
         result.Should().BeNull();
     }
@@ -43,37 +47,14 @@ public sealed class GenericRepositoryTest
     [Fact]
     public async Task AddAsync_WhenCalled_AddsEntityToContext()
     {
-        var shortUrl = new ShortUrl("https://example.com");
-        shortUrl.SetShortCode("bar");
+        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("bar");
 
         await _repository.AddAsync(shortUrl);
-        await _repository.SaveChanges();
 
-        var result = _context.ShortUrls.FirstOrDefault(e => e.ShortCode == "bar");
+        var result = _context.ShortUrls.FirstOrDefault(e => e.AliasUrl == "bar");
 
         result.Should().NotBeNull();
-        result!.ShortCode.Should().Be("bar");
-    }
-
-    [Fact]
-    public async Task AnyAsync_WhenEntityMatchesFilter_ReturnsTrue()
-    {
-        var shortUrl = new ShortUrl("https://example.com");
-        shortUrl.SetShortCode("baz");
-
-        await _repository.AddAsync(shortUrl);
-        await _repository.SaveChanges();
-
-        var result = await _repository.AnyAsync(e => e.ShortCode == "baz");
-
-        result.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task AnyAsync_WhenNoEntityMatchesFilter_ReturnsFalse()
-    {
-        var result = await _repository.AnyAsync(e => e.ShortCode == "nonexistent");
-
-        result.Should().BeFalse();
+        result!.AliasUrl.Should().Be("bar");
     }
 }

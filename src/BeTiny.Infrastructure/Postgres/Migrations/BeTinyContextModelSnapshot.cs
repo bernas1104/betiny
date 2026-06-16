@@ -82,13 +82,13 @@ namespace BeTiny.Infrastructure.Postgres.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CustomAlias")
+                    b.Property<string>("AliasUrl")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasColumnName("CustomAlias");
+                        .HasColumnName("AliasUrl");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
@@ -106,10 +106,10 @@ namespace BeTiny.Infrastructure.Postgres.Migrations
                         .HasColumnType("character varying(2048)")
                         .HasColumnName("OriginalUrl");
 
-                    b.Property<string>("ShortCode")
-                        .HasMaxLength(7)
-                        .HasColumnType("character varying(7)")
-                        .HasColumnName("ShortCode");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("Type");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -119,10 +119,7 @@ namespace BeTiny.Infrastructure.Postgres.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomAlias")
-                        .IsUnique();
-
-                    b.HasIndex("ShortCode")
+                    b.HasIndex("AliasUrl")
                         .IsUnique();
 
                     b.ToTable("ShortUrls", (string)null);

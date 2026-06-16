@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using BeTiny.Domain.Common.Entities;
+using BeTiny.Domain.Enums;
 using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 
@@ -10,8 +11,8 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
 {
     public UserId? UserId { get; private set; }
     public string OriginalUrl { get; private set; }
-    public string? ShortCode { get; private set; }
-    public string? CustomAlias { get; private set; }
+    public string AliasUrl { get; private set; }
+    public AliasUrlType Type { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
     public IReadOnlyList<ClickEvent> ClickEvents { get; private set; }
 
@@ -23,48 +24,36 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     }
     #pragma warning restore
 
-    public ShortUrl(string originalUrl)
+    public ShortUrl(string originalUrl, AliasUrlType type)
     {
         Id = ShortUrlId.CreateUnique();
         OriginalUrl = originalUrl;
+        AliasUrl = null!;
+        Type = type;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
         ClickEvents = [];
     }
 
-    public void SetShortCode(string shortCode)
+    public void SetAliasUrl(string aliasUrl)
     {
-        if (string.IsNullOrWhiteSpace(shortCode))
-            throw new ArgumentException("Short code cannot be null or whitespace.", nameof(shortCode));
+        if (string.IsNullOrWhiteSpace(aliasUrl))
+            throw new ArgumentException("Shortened URL cannot be null or whitespace.", nameof(aliasUrl));
 
-        if (shortCode.Length > 7)
-            throw new ArgumentException("Short code cannot be longer than 7 characters.", nameof(shortCode));
+        if (Type == AliasUrlType.ShortCode && aliasUrl.Length > 7)
+            throw new ArgumentException("Short code cannot be longer than 7 characters.", nameof(aliasUrl));
 
-        if (CustomAlias != null)
-            throw new InvalidOperationException("Custom alias has already been set and cannot be changed.");
+        if (Type == AliasUrlType.CustomAlias && !CustomAliasRegex().IsMatch(aliasUrl))
+            throw new ArgumentException(
+                "Custom alias must be 3-50 characters and contain only letters, numbers, hyphens, or underscores.",
+                nameof(aliasUrl)
+            );
 
-        if (ShortCode != null)
-            throw new InvalidOperationException("Short code has already been set and cannot be changed.");
-
-        ShortCode = shortCode;
+        AliasUrl = aliasUrl;
     }
 
-    public void SetCustomAlias(string customAlias)
-    {
-        if (string.IsNullOrWhiteSpace(customAlias))
-            throw new ArgumentException("Custom alias cannot be null or whitespace.", nameof(customAlias));
-
-        if (customAlias.Length < 3 || customAlias.Length > 50)
-            throw new ArgumentException("Custom alias must be between 3 and 50 characters long.", nameof(customAlias));
-
-        if (ShortCode != null)
-            throw new InvalidOperationException("Short code has already been set and cannot be changed.");
-
-        if (CustomAlias != null)
-            throw new InvalidOperationException("Custom alias has already been set and cannot be changed.");
-
-        CustomAlias = customAlias;
-    }
+    [GeneratedRegex("^[A-Za-z0-9_-]{3,50}$")]
+    private static partial Regex CustomAliasRegex();
 
     public bool IsExpired() => ExpiresAt.HasValue && DateTime.UtcNow > ExpiresAt.Value;
 

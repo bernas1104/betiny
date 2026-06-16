@@ -50,8 +50,6 @@ public class CreateClickEventNotificationHandlerTest
                 Arg.Is<ClickEvent>(ce => ce.Id == notification.ClickEvent.Id),
                 Arg.Any<CancellationToken>()
             );
-
-        await _repository.Received(1).SaveChanges(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -87,8 +85,5 @@ public class CreateClickEventNotificationHandlerTest
                 Arg.Is<ClickEvent>(ce => ce.Id == notification.ClickEvent.Id),
                 Arg.Any<CancellationToken>()
             );
-
-        await _repository.DidNotReceive()
-            .SaveChanges(Arg.Any<CancellationToken>());
     }
 }

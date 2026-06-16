@@ -43,8 +43,8 @@ public class UrlShortenerController : Controller
                 Url.Action(
                     new UrlActionContext
                     {
-                        Action = nameof(RedirectByShortCode),
-                        Values = new { shortCode = result.Value!.ShortUrl },
+                        Action = nameof(RedirectByShortUrl),
+                        Values = new { shortUrl = result.Value!.ShortUrl },
                         Protocol = Request.Scheme,
                         Host = Request.Host.ToString()
                     }
@@ -55,14 +55,14 @@ public class UrlShortenerController : Controller
     }
 
     /// <summary>
-    /// Redirects to the original URL based on the provided short code.
+    /// Redirects to the original URL based on the provided short URL.
     /// </summary>
-    /// <param name="shortCode">The short code of the URL.</param>
+    /// <param name="shortUrl">The short URL of the original URL.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A redirection to the original URL if found; otherwise, a 404 Not Found response.</returns>
-    [HttpGet("{shortCode}")]
-    public async Task<IActionResult> RedirectByShortCode(
-        [FromRoute] string shortCode,
+    [HttpGet("{shortUrl}")]
+    public async Task<IActionResult> RedirectByShortUrl(
+        [FromRoute] string shortUrl,
         CancellationToken cancellationToken
     )
     {
@@ -70,7 +70,7 @@ public class UrlShortenerController : Controller
         
         var result = await _sender.Send(
             new GetByShortUrlRequest(
-                shortCode,
+                shortUrl,
                 HttpContext.Request.Headers["User-Agent"].ToString(),
                 HttpContext.Request.Headers["Referer"].ToString(),
                 ipAddress

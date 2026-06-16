@@ -2,8 +2,10 @@ using System.Linq.Expressions;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Common.ValueObjects;
+using BeTiny.Domain.Exceptions;
 using BeTiny.Infrastructure.Postgres.Context;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace BeTiny.Infrastructure.Postgres.Repositories;
 
@@ -18,15 +20,31 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         _context = context;
     }
 
-    public Task AddAsync(TEntity entity, CancellationToken ct = default)
+    public async Task AddAsync(TEntity entity, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
 
-        _context.Set<TEntity>()
-            .Add(entity);
+        try
+        {
+            await _context.Set<TEntity>()
+                .AddAsync(entity, ct);
 
-        return Task.CompletedTask;
+            await SaveChanges(ct);
+        }
+        catch (DbUpdateException ex)
+            when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") // Unique violation
+        {
+            if (IsUniqueConstraintViolation(pgEx, "AliasUrl"))
+                throw new DuplicateAliasUrlException(
+                    $"A shortened URL already exists for the provided value."
+                );
+
+            throw;
+        }
     }
+
+    private bool IsUniqueConstraintViolation(PostgresException pgEx, string constraintName)
+        => pgEx.ConstraintName!.Contains(constraintName, StringComparison.OrdinalIgnoreCase);
 
     public Task<TEntity?> GetByFilterAsync(
         Expression<Func<TEntity, bool>> filter,
@@ -47,7 +65,7 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
             .AnyAsync(filter, ct);
     }
 
-    public Task<int> SaveChanges(CancellationToken ct = default)
+    private Task<int> SaveChanges(CancellationToken ct = default)
     {
         return _context.SaveChangesAsync(ct);
     }

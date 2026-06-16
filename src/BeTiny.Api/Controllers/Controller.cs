@@ -66,6 +66,7 @@ public abstract class Controller : ControllerBase
         {
             ErrorTypes.ValidationError => 400,
             ErrorTypes.NotFoundError => 404,
+            ErrorTypes.ConflictError => 409,
             ErrorTypes.ExpiredError => 410,
             _ => 500
         };

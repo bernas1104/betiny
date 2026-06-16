@@ -1,4 +1,5 @@
 using BeTiny.IntegrationTests.Fixtures;
+using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace BeTiny.IntegrationTests;
 
@@ -13,7 +14,12 @@ public abstract class BaseIntegrationTest : IAsyncLifetime
     {
         Fixture = fixture;
         Factory = fixture.Factory;
-        Client = Factory.CreateClient();
+        Client = Factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false
+            }
+        );
     }
 
     public virtual Task InitializeAsync() => Task.CompletedTask;

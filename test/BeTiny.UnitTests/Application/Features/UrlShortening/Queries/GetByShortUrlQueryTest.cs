@@ -46,12 +46,12 @@ public class GetByShortUrlQueryTest
         // Arrange
         var expectedCountry = _faker.Address.Country();
 
-        var shortUrl = new ShortUrl("http://example.com");
-        shortUrl.SetShortCode("abc123");
+        var shortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("abc123");
 
         Expression<Func<ShortUrl, bool>>? capturedExpression = null;
-        var wrongShortUrl = new ShortUrl("http://example.com");
-        wrongShortUrl.SetShortCode("wrong");
+        var wrongShortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
+        wrongShortUrl.SetAliasUrl("wrong");
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
@@ -114,13 +114,13 @@ public class GetByShortUrlQueryTest
         // Arrange
         var expectedCountry = _faker.Address.Country();
 
-        var shortUrl = new ShortUrl("http://example.com");
-        shortUrl.SetCustomAlias("custom123");
+        var shortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("foo123");
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
             Arg.Any<CancellationToken>()
-        ).Returns(null, shortUrl);
+        ).Returns(shortUrl);
 
         _ipResolver.GetCountryByIpAsync(
             Arg.Any<string?>(),
@@ -128,7 +128,7 @@ public class GetByShortUrlQueryTest
         ).Returns(expectedCountry);
 
         var request = new GetByShortUrlRequest(
-            "custom123",
+            "foo123",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "http://unittest.com",
             "127.0.0.1"
@@ -160,8 +160,8 @@ public class GetByShortUrlQueryTest
     public async Task Handle_ShouldReturnSuccessResult_WhenIpResolverFails()
     {
         // Arrange
-        var shortUrl = new ShortUrl("http://example.com");
-        shortUrl.SetShortCode("abc123");
+        var shortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
+        shortUrl.SetAliasUrl("abc123");
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
@@ -202,8 +202,8 @@ public class GetByShortUrlQueryTest
     public async Task Handle_ShouldReturnFailureResult_WhenShortUrlDoesNotExist()
     {
         // Arrange
-        var nonExistentShortUrl = new ShortUrl("http://example.com");
-        nonExistentShortUrl.SetShortCode("nExist");
+        var nonExistentShortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
+        nonExistentShortUrl.SetAliasUrl("nExist");
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
@@ -223,9 +223,9 @@ public class GetByShortUrlQueryTest
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().NotBeNull();
-        result.Errors!.First().ErrorMessage.Should().Be("Short code not found.");
+        result.Errors!.First().ErrorMessage.Should().Be("Short URL not found.");
 
-        await _shortUrlRepository.Received(2).GetByFilterAsync(
+        await _shortUrlRepository.Received(1).GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
             Arg.Any<CancellationToken>()
         );
@@ -240,8 +240,8 @@ public class GetByShortUrlQueryTest
     public async Task Handle_ShouldReturnFailureResult_WhenShortUrlIsExpired()
     {
         // Arrange
-        var expiredShortUrl = new ShortUrl("http://example.com");
-        expiredShortUrl.SetShortCode("expired");
+        var expiredShortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
+        expiredShortUrl.SetAliasUrl("expired");
         
         var dateTimeProvider = Substitute.For<IDateTimeProvider>();
         dateTimeProvider.UtcNow.Returns(DateTime.UtcNow.AddDays(-1));
@@ -264,7 +264,7 @@ public class GetByShortUrlQueryTest
 
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().NotBeNull();
-        result.Errors!.First().ErrorMessage.Should().Be("Short code has expired.");
+        result.Errors!.First().ErrorMessage.Should().Be("Short URL has expired.");
 
         await _shortUrlRepository.Received(1).GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),

@@ -7,8 +7,10 @@ using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 using BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace BeTiny.IntegrationTests.Api;
 
@@ -53,15 +55,16 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
     }
 
     [Fact]
-    public async Task GetByShortUrl_ReturnsOriginalUrl_WhenShortCodeExists()
+    public async Task CreateShortUrl_WithCustomAlias_ReturnsCreated()
     {
-        var createRequest = new CreateShortUrlRequest("https://www.example.com");
-        var json = JsonSerializer.Serialize(createRequest);
+        var request = new CreateShortUrlRequest("https://www.example.com", "foo");
+        var json = JsonSerializer.Serialize(request);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var createResponse = await Client.PostAsync("/api/v1/UrlShortener", content);
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var response = await Client.PostAsync("/api/v1/UrlShortener", content);
 
-        var responseBody = await createResponse.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<CreateShortUrlResponse>(
             responseBody,
             new JsonSerializerOptions
@@ -69,41 +72,90 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
                 PropertyNameCaseInsensitive = true
             }
         );
+
         result.Should().NotBeNull();
-        var shortCode = result!.ShortUrl!;
-
-        using var scope = Factory.Services.CreateScope();
-        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
-        var queryResult = await sender.Send(
-            new GetByShortUrlRequest(
-                shortCode,
-                "TestAgent",
-                "http://test.com",
-                "127.0.0.1"
-            )
-        );
-
-        queryResult.IsSuccess.Should().BeTrue();
-        queryResult.Value.Should().NotBeNull();
-        queryResult.Value!.OriginalUrl.Should().Be("https://www.example.com");
+        result!.ShortUrl.Should().Be("foo");
     }
 
     [Fact]
-    public async Task GetByShortUrl_ReturnsNotFound_WhenShortCodeDoesNotExist()
+    public async Task CreateShortUrl_WithDuplicateShortCode_ReturnsCreated()
+    {
+        var request = new CreateShortUrlRequest("https://www.example.com");
+        var json = JsonSerializer.Serialize(request);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var redis = Factory.Services.GetRequiredService<IConnectionMultiplexer>();
+        redis.GetDatabase().StringSet("UrlShortener:Counter", 0);
+        
+        await Client.PostAsync("/api/v1/UrlShortener", content);
+        var response = await Client.PostAsync("/api/v1/UrlShortener", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<CreateShortUrlResponse>(
+            responseBody,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }
+        );
+
+        result.Should().NotBeNull();
+        result!.ShortUrl.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task CreateShortUrl_WithDuplicateCustomAlias_ReturnsConflict()
+    {
+        var request = new CreateShortUrlRequest("https://www.example.com", "customalias123");
+        var duplicateRequest = new CreateShortUrlRequest("https://www.example.com", "customalias123");
+        
+        var json = JsonSerializer.Serialize(request);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        await Client.PostAsync("/api/v1/UrlShortener", content);
+
+        json = JsonSerializer.Serialize(duplicateRequest);
+        content = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await Client.PostAsync("/api/v1/UrlShortener", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<ProblemDetails>(
+            responseBody,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }
+        );
+
+        result.Should().NotBeNull();
+        result!.Title.Should().Be("ConflictError");
+    }
+
+    [Fact]
+    public async Task GetByShortUrl_ReturnsOriginalUrl_WhenShortUrlExists()
     {
         using var scope = Factory.Services.CreateScope();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
-        var queryResult = await sender.Send(
-            new GetByShortUrlRequest(
-                "notfnd",
-                "TestAgent",
-                "http://test.com",
-                "127.0.0.1"
-            )
-        );
+        
+        var commandResult = await sender.Send(new CreateShortUrlRequest("https://www.example.com"));
+        commandResult.IsSuccess.Should().BeTrue();
 
-        queryResult.IsSuccess.Should().BeFalse();
-        queryResult.Errors.Should().NotBeNullOrEmpty();
-        queryResult.Errors!.First().ErrorType.Should().Be(ErrorTypes.NotFoundError);
+        var shortUrl = commandResult.Value!.ShortUrl!;
+
+        var createResponse = await Client.GetAsync($"/api/v1/UrlShortener/{shortUrl}");
+        
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Redirect);
+    }
+
+    [Fact]
+    public async Task GetByShortUrl_ReturnsNotFound_WhenShortUrlDoesNotExist()
+    {
+        var shortUrl = "notfound";
+        var createResponse = await Client.GetAsync($"/api/v1/UrlShortener/{shortUrl}");
+        
+        createResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

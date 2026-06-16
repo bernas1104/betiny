@@ -161,7 +161,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 - **Classes/Files** — PascalCase matching the type name (`UrlShortenerService.cs`)
 - **Tests** — `{Class}Tests.cs` with methods named `{Method}_{Scenario}_Returns{Expected}`
-- **Records** — singular nouns (`WeatherForecast`, `ShortenedUrl`)
+- **Records** — singular nouns (`WeatherForecast`, `AliasUrl`)
 - **Interfaces** — `I` prefix (`IUrlRepository`)
 - **Async methods** — `Async` suffix (`CreateAsync`, `GetByIdAsync`)
 

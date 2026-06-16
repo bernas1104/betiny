@@ -28,11 +28,13 @@ public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateSho
             .WithMessage("The OriginalUrl must be a valid absolute URL using HTTP or HTTPS scheme.");
 
         RuleFor(x => x.CustomAlias)
+            .NotEmpty()
+            .WithMessage("The CustomAlias must not be empty if provided.")
             .MinimumLength(3)
             .MaximumLength(50)
-            .Matches("^[a-zA-Z0-9_-]*$")
+            .Matches("^[a-zA-Z0-9_-]+$")
             .WithMessage("The CustomAlias can only contain letters, numbers, underscores, and hyphens.")
-            .When(x => !string.IsNullOrEmpty(x.CustomAlias));
+            .When(x => x.CustomAlias is not null);
 
         RuleFor(x => x.ExpiresAt)
             .Must(dt => !dt.HasValue || dt.Value.Kind == DateTimeKind.Utc)

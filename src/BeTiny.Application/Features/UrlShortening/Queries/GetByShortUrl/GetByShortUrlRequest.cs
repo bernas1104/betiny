@@ -5,11 +5,11 @@ using FluentValidation;
 namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 
 public sealed record GetByShortUrlRequest(
-    string ShortCode,
+    string ShortUrl,
     string UserAgent,
     string Referer,
     string? IpAddress = null
-)   : IRequest<Result<GetByShortUrlResponse>>;
+)   : IQuery<Result<GetByShortUrlResponse>>;
 
 /// <summary>
 /// Validator for the <see cref="GetByShortUrlRequest"/> class.
@@ -21,12 +21,12 @@ public sealed class GetByShortUrlRequestValidator : AbstractValidator<GetByShort
     /// </summary>
     public GetByShortUrlRequestValidator()
     {
-        RuleFor(x => x.ShortCode)
+        RuleFor(x => x.ShortUrl)
             .NotEmpty()
-            .WithMessage("Short code must not be empty.")
-            .MaximumLength(7)
-            .WithMessage("Short code must not exceed 7 characters.")
-            .Matches("^[a-zA-Z0-9]+$")
-            .WithMessage("Short code must contain only alphanumeric characters.");
+            .WithMessage("Short URL must not be empty.")
+            .MaximumLength(50)
+            .WithMessage("Short URL must not exceed 50 characters.")
+            .Matches("^[a-zA-Z0-9_-]+$")
+            .WithMessage("Short URL must contain only alphanumeric characters, hyphens, or underscores.");
     }
 }

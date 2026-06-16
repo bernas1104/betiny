@@ -58,11 +58,7 @@ public class GetByShortUrlQuery
     )
     {
         var shortUrl = await _shortUrlRepository.GetByFilterAsync(
-            x => x.ShortCode == request.ShortCode,
-            cancellationToken
-        );
-        shortUrl ??= await _shortUrlRepository.GetByFilterAsync(
-            x => x.CustomAlias == request.ShortCode,
+            x => x.AliasUrl == request.ShortUrl,
             cancellationToken
         );
 
@@ -98,7 +94,7 @@ public class GetByShortUrlQuery
             return new Error(
                 ErrorTypes.NotFoundError,
                 null,
-                "Short code not found.",
+                "Short URL not found.",
                 ErrorSeverity.Medium
             );
         }
@@ -106,7 +102,7 @@ public class GetByShortUrlQuery
         return new Error(
             ErrorTypes.ExpiredError,
             null,
-            "Short code has expired.",
+            "Short URL has expired.",
             ErrorSeverity.Medium
         );
     }

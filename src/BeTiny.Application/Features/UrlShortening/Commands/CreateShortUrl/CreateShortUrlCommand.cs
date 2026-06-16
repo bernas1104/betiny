@@ -4,6 +4,8 @@ using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Enums;
+using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
@@ -51,48 +53,77 @@ public class CreateShortUrlCommand :
         CancellationToken cancellationToken
     )
     {
-        var shortUrl = new ShortUrl(command.OriginalUrl);
-        shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
-
-        if (command.CustomAlias is null)
-        {
-            var shortCode = await _shortCodeGenerator.GenerateShortCode();
-            shortUrl.SetShortCode(shortCode);
-        }
-
+        var created = false;
+        ShortUrl shortUrl;
         if (command.CustomAlias is not null)
         {
-            var customAliasExists = await _shortUrlRepository.AnyAsync(
-                f => f.CustomAlias == command.CustomAlias,
-                cancellationToken
+            shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.CustomAlias);
+            shortUrl.SetAliasUrl(command.CustomAlias);
+            shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
+
+            created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
+        }
+        else
+        {
+            shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.ShortCode);
+            
+            while (!created)
+            {
+                var shortCode = await _shortCodeGenerator.GenerateShortCode();
+                shortUrl.SetAliasUrl(shortCode);
+                shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
+                
+                created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
+            }
+        }
+
+        if (created)
+        {
+            _logger.LogInformation(
+                "Short URL for {OriginalUrl} created: {AliasUrl}",
+                command.OriginalUrl,
+                shortUrl.AliasUrl
             );
 
-            if (customAliasExists)
+            return Result<CreateShortUrlResponse>.Success(
+                new CreateShortUrlResponse(shortUrl.AliasUrl)
+            );
+        }
+
+        return Result<CreateShortUrlResponse>.Failure(
+            new Error(
+                ErrorTypes.ConflictError,
+                nameof(command.CustomAlias),
+                "A short URL with the same value already exists.",
+                ErrorSeverity.Medium
+            )
+        );
+    }
+
+    private async Task<bool> TryAddShortUrlAsync(ShortUrl shortUrl, CancellationToken cancellationToken)
+    {
+        try
+        {   
+            await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
+            return true;
+        }
+        catch (DuplicateAliasUrlException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to create short URL for {OriginalUrl}. A shortened URL with the same value already exists.",
+                shortUrl.OriginalUrl
+            );
+
+            if (shortUrl.Type == AliasUrlType.ShortCode)
             {
-                return Result<CreateShortUrlResponse>.Failure(
-                    new Error(
-                        ErrorTypes.ConflictError,
-                        nameof(command.CustomAlias),
-                        "The custom alias is already in use. Please choose a different one.",
-                        ErrorSeverity.Medium
-                    )
+                _logger.LogInformation(
+                    "Retrying short URL creation for {OriginalUrl} with a new short code.",
+                    shortUrl.OriginalUrl
                 );
             }
 
-            shortUrl.SetCustomAlias(command.CustomAlias);
+            return false;
         }
-
-        await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
-        await _shortUrlRepository.SaveChanges(cancellationToken);
-
-        _logger.LogInformation(
-            "Short URL for {OriginalUrl} created: {ShortUrl}",
-            command.OriginalUrl,
-            shortUrl.ShortCode ?? shortUrl.CustomAlias
-        );
-
-        return Result<CreateShortUrlResponse>.Success(
-            new CreateShortUrlResponse(shortUrl.ShortCode ?? shortUrl.CustomAlias)
-        );
     }
 }
