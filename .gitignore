@@ -487,3 +487,6 @@ $RECYCLE.BIN/
 
 # AI Plans
 .plans/
+
+# Custom
+src/appsettings.**.json
