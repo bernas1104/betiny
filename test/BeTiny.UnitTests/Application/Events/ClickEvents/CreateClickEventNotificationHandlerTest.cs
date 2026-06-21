@@ -86,9 +86,9 @@ public class CreateClickEventNotificationHandlerTest
                 Arg.Any<CancellationToken>()
             );
     }
-
+    
     [Fact]
-    public async Task TryGetCountryByIpAsync_WhenIpResolutionFails_ThenReturnsUnknown()
+    public async Task Handle_WhenAddClickEventThrowsException_ReturnsErrorLogAndRethrows()
     {
         // Arrange
         var notification = new CreateClickEventNotification(
@@ -97,60 +97,24 @@ public class CreateClickEventNotificationHandlerTest
                     "http://example.com",
                     f.PickRandom<AliasUrlType>()
                 )
-            ),
+            ).Generate(),
             _faker.Internet.UserAgent(),
             "referer",
             _faker.Internet.Ip()
         );
 
-        _ipResolver.GetCountryByIpAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
+        _repository.AddAsync(Arg.Any<ClickEvent>(),Arg.Any<CancellationToken>())
             .ThrowsAsync(new Exception());
     
         // Act
-        await _handler.Handle(notification);
+        var func = async () => await _handler.Handle(notification);
     
         // Assert
+        await func.Should().ThrowAsync<Exception>();
+        
         _logger.ReceivedCalls()
-            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning
-                && call.GetArguments()[3] is not null
-                && call.GetArguments()[3]!.GetType() == typeof(Exception)
-            )
-            .Should()
-            .ContainSingle();
-
-        await _repository.Received(1)
-            .AddAsync(
-                Arg.Is<ClickEvent>(ce => ce.ShortUrlId == notification.ShortUrl.Id),
-                Arg.Any<CancellationToken>()
-            );
-    }
-
-    [Fact]
-    public async Task TryGetCountryByIpAsync_WhenIpResolutionIsCancelled_ThenThrowsOperationCanceledException()
-    {
-        // Arrange
-        var notification = new CreateClickEventNotification(
-            new Faker<ShortUrl>().CustomInstantiator(
-                f => new (
-                    "http://example.com",
-                    f.PickRandom<AliasUrlType>()
-                )
-            ),
-            _faker.Internet.UserAgent(),
-            "referer",
-            _faker.Internet.Ip()
-        );
-
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
-
-        _ipResolver.GetCountryByIpAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new OperationCanceledException());
-    
-        // Act
-        var func = async () => await _handler.Handle(notification, cts.Token);
-    
-        // Assert
-        await func.Should().ThrowAsync<OperationCanceledException>();
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Error
+                && call.GetArguments()[3] is not null)
+            .Should().ContainSingle();
     }
 }

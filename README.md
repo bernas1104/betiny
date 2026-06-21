@@ -44,6 +44,7 @@ Tests → (all projects)
 | Cache          | Redis 7                                 |
 | Validation     | FluentValidation                        |
 | Scanning       | Scrutor                                 |
+| HTTP clients   | Refit                                   |
 | Device parsing | UAParser                                |
 | Testing        | xUnit + Coverlet + NSubstitute + AwesomeAssertions + Bogus + Testcontainers |
 | Commit hooks   | Husky + Commitlint (conventional commits) |
@@ -84,6 +85,13 @@ Environment variables are prefixed with `BETINY_NPGSQL_*` and `BETINY_REDIS_*`:
 | `BETINY_NPGSQL_PORT`         | `5432`          | PostgreSQL port        |
 | `BETINY_REDIS_PASSWORD`      | `redis_secret`  | Redis password         |
 | `BETINY_REDIS_PORT`          | `6379`          | Redis port             |
+
+**IpApi** (configured in `appsettings.json`):
+
+| Variable                     | Default         | Description            |
+|------------------------------|-----------------|------------------------|
+| `IpApi:BaseUrl`              | `http://ip-api.com` | IP geolocation API base URL |
+| `IpApi:TimeoutSeconds`       | `5`             | Request timeout (seconds) |
 
 Connection strings are set in `appsettings.Development.json` under `ConnectionStrings:Postgres` and `ConnectionStrings:Redis`.
 
