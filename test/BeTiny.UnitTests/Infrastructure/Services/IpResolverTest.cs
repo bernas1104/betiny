@@ -24,7 +24,7 @@ public sealed class IpResolverTest
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public async Task GetCountryByIpAsync_ShouldReturnUnknown_WhenIpAddressIsNullOrEmpty(string? ipAddress)
+    public async Task GetCountryByIpAsync_WhenIpAddressIsNullOrEmpty_ReturnsUnknown(string? ipAddress)
     {
         // Act
         var result = await _ipResolver.GetCountryByIpAsync(ipAddress);
@@ -39,7 +39,7 @@ public sealed class IpResolverTest
     }
 
     [Fact]
-    public async Task GetCountryByIpAsync_ShouldReturnCountry_WhenIpAddressIsValid()
+    public async Task GetCountryByIpAsync_WhenIpAddressIsValid_ReturnsCountry()
     {
         // Arrange
         var ipAddress = _faker.Internet.IpAddress()
@@ -63,7 +63,7 @@ public sealed class IpResolverTest
     }
 
     [Fact]
-    public async Task GetCountryByIpAsync_ShouldReturnUnknown_WhenIpApiThrowsException()
+    public async Task GetCountryByIpAsync_WhenIpApiThrowsException_ReturnsUnknown()
     {
         // Arrange
         var ipAddress = _faker.Internet.IpAddress()

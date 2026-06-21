@@ -29,10 +29,12 @@ public static class ConfigureServices
                 var ipApiOptions = configuration.GetSection("IpApi").Get<IpApiOptions>();
                 if (ipApiOptions == null)
                     throw new InvalidOperationException("IpApi options are not configured.");
-
                 
                 if (string.IsNullOrEmpty(ipApiOptions.BaseUrl))
                     throw new InvalidOperationException("IpApi BaseUrl is not configured.");
+
+                if (ipApiOptions.TimeoutSeconds <= 0)
+                    throw new InvalidOperationException("IpApi TimeoutSeconds must be greater than zero.");
 
                 c.BaseAddress = new Uri(ipApiOptions.BaseUrl);
                 c.Timeout = TimeSpan.FromSeconds(ipApiOptions.TimeoutSeconds);

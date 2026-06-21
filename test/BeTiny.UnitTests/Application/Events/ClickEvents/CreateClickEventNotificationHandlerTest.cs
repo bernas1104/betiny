@@ -86,9 +86,9 @@ public class CreateClickEventNotificationHandlerTest
                 Arg.Any<CancellationToken>()
             );
     }
-
+    
     [Fact]
-    public async Task Handle_WhenAddClickEventThrowsException_ThenLogsError()
+    public async Task Handle_WhenAddClickEventThrowsException_ReturnsErrorLogAndRethrows()
     {
         // Arrange
         var notification = new CreateClickEventNotification(
