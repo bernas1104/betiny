@@ -22,7 +22,7 @@ public static class ConfigureDependencyInjection
     services.RegisterOptions(configuration);
     services.RegisterDatabases(configuration);
     services.RegisterHandlers();
-    services.RegisterServices();
+    services.RegisterServices(configuration);
     services.RegisterValidators();
     
     return services;
