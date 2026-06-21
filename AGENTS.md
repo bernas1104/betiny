@@ -189,7 +189,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 ## Services
 
-- **`IIpResolver`** / **`IpResolver`** — resolves country from IP address (currently placeholder returning `"Unknown"`)
+- **`IIpResolver`** / **`IpResolver`** — resolves country from IP address via an external IP geolocation API (ip-api.com) using `IIpApi`; falls back to `"Unknown"` on failure or missing IP
 - **`IDeviceDetector`** / **`DeviceDetector`** — parses User-Agent strings via **UAParser** to classify devices as `Desktop`, `Mobile`, `Tablet`, or `Unknown`
 - **`IDateTimeProvider`** / **`DateTimeProvider`** — provides `DateTime.UtcNow` abstraction for testability
 
@@ -197,7 +197,7 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 - `ConfigureDatabases.cs` — registers `DbContext` and Redis connections
 - `ConfigureHandlers.cs` — scans and registers `IRequestHandler<>`, `INotificationHandler<>`, `ISender`, `IPublisher`, and pipeline behaviors
-- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`, `IDateTimeProvider`)
+- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`, `IDateTimeProvider`) and the Refit client for `IIpApi`
 - `ConfigureValidators.cs` — registers FluentValidation validators from the Application assembly
 
 ## VS Code / Editor
