@@ -6,5 +6,5 @@ namespace BeTiny.Application.Common.Interfaces.Services;
 public interface IIpApi
 {
     [Get("/json/{query}")]
-    Task<IpApiResponse> GetIpInfoAsync(string query, CancellationToken ct = default);
+    Task<IpApiResponse> GetIpInfoAsync(string query);
 }

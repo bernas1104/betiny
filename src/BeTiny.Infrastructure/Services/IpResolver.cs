@@ -23,10 +23,7 @@ public sealed class IpResolver : IIpResolver
     }
 
     /// <inheritdoc/>
-    public async Task<string> GetCountryByIpAsync(
-        string? ipAddress,
-        CancellationToken ct = default
-    )
+    public async Task<string> GetCountryByIpAsync(string? ipAddress)
     {
         try
         {
@@ -36,7 +33,7 @@ public sealed class IpResolver : IIpResolver
                 return "Unknown";
             }
 
-            var ipInfo = await _ipApi.GetIpInfoAsync(ipAddress, ct);
+            var ipInfo = await _ipApi.GetIpInfoAsync(ipAddress);
             return ipInfo.Country ?? "Unknown";
         }
         catch (Exception ex)

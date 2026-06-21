@@ -49,7 +49,7 @@ public class CreateClickEventNotificationHandler
         CancellationToken ct = default
     )
     {
-        var country = await _ipResolver.GetCountryByIpAsync(notification.IpAddress, ct);
+        var country = await _ipResolver.GetCountryByIpAsync(notification.IpAddress);
         if (country == "Unknown")
         {
             _logger.LogWarning(
