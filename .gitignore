@@ -489,4 +489,4 @@ $RECYCLE.BIN/
 .plans/
 
 # Custom
-src/appsettings.**.json
+src/**/appsettings.**.json
