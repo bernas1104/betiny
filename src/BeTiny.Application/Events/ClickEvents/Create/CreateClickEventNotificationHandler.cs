@@ -49,26 +49,26 @@ public class CreateClickEventNotificationHandler
         CancellationToken ct = default
     )
     {
+        var country = await _ipResolver.GetCountryByIpAsync(notification.IpAddress, ct);
+        if (country == "Unknown")
+        {
+            _logger.LogWarning(
+                "Could not resolve country of origin for click event of ShortUrl {ShortUrlId}. "
+                    + "Defaulting to 'Unknown'.",
+                notification.ShortUrl.Id
+            );
+        }
+
+        var clickEvent = CreateClickEvent(notification.ShortUrl, notification, country);
+
         try
         {
-            var country = await TryGetCountryByIpAsync(
-                notification.IpAddress,
-                notification.ShortUrl.Id,
-                ct
-            );
-
-            var clickEvent = CreateClickEvent(notification.ShortUrl, notification, country);
-
             await _repository.AddAsync(clickEvent, ct);
 
             _logger.LogInformation(
                 "Successfully created click event with ID {ClickEventId}.",
                 clickEvent.Id
             );
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {   
-            throw;
         }
         catch (Exception ex)
         {
@@ -79,35 +79,6 @@ public class CreateClickEventNotificationHandler
             );
             
             throw;
-        }
-    }
-
-
-    // TODO - Method catches ALL exceptions, which is not ideal. Consider implementing more specific 
-    // error handling or using a more robust IP resolution service that provides better error information.
-    private async Task<string> TryGetCountryByIpAsync(
-        string? ipAddress,
-        ShortUrlId shortUrlId,
-        CancellationToken ct
-    )
-    {
-        try
-        {
-            return await _ipResolver.GetCountryByIpAsync(ipAddress, ct);
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(
-                ex,
-                "Failed to resolve country for click event of ShortUrl {ShortUrlId}.",
-                shortUrlId
-            );
-            
-            return "Unknown";
         }
     }
 
