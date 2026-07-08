@@ -110,14 +110,14 @@ public class GetByShortUrlQuery
         );
     }
 
-    private Task PublishClickEventAsync(
+    private async Task PublishClickEventAsync(
         CreateClickEventNotification notification,
         CancellationToken cancellationToken
     )
     {
         try
         {
-            return _publisher.Publish(notification, cancellationToken);
+            await _publisher.Publish(notification, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -126,8 +126,6 @@ public class GetByShortUrlQuery
                 "Click event tracking failed for short URL '{ShortUrl}'. Redirect proceeding.",
                 notification.ShortUrl.AliasUrl
             );
-
-            return Task.CompletedTask;
         }
     }
 }

@@ -8,6 +8,7 @@ using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Bogus;
 using Microsoft.Extensions.Logging;
+using NSubstitute.ExceptionExtensions;
 
 namespace BeTiny.UnitTests.Application.Features.UrlShortening.Queries;
 
@@ -132,6 +133,52 @@ public class GetByShortUrlQueryTest
         result.Value.Should().NotBeNull();
         result.Value!.OriginalUrl.Should().Be("http://example.com");
         result.Value.ExpiresAt.Should().BeNull();
+
+        await _publisher.Received(1).Publish(
+            Arg.Is<CreateClickEventNotification>(n =>
+                n.ShortUrl.Id == shortUrl.Id &&
+                n.IpAddress == "127.0.0.1" &&
+                n.UserAgent == "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" &&
+                n.Referer == "http://unittest.com"
+            ),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    public async Task Handle_ShouldLogWarningAndReturnSuccess_WhenPublishClickEventFails()
+    {
+        var expectedCountry = _faker.Address.Country();
+
+        var shortUrl = ShortUrl.CreateFromCustomAlias(
+            "http://example.com",
+            "foo123",
+            null,
+            _dateTimeProvider
+        );
+
+        _shortUrlRepository.GetByFilterAsync(
+            Arg.Any<Expression<Func<ShortUrl, bool>>>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(shortUrl);
+
+        _publisher.Publish(
+            Arg.Any<CreateClickEventNotification>(),
+            Arg.Any<CancellationToken>()
+        ).ThrowsAsync(new Exception("Simulated failure"));
+
+        var request = new GetByShortUrlRequest(
+            "foo123",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "http://unittest.com",
+            "127.0.0.1"
+        );
+
+        // Act
+        var result = await _query.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
 
         await _publisher.Received(1).Publish(
             Arg.Is<CreateClickEventNotification>(n =>
