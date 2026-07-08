@@ -13,8 +13,8 @@ public static class IpApiResponseMotherObject
                     .MapToIPv4()
                     .ToString(),
                 success ?? f.Random.Bool(),
-                success ?? f.Random.Bool() ? f.Random.String2(10) : null,
                 country ?? f.Address.Country(),
+                !(success ?? f.Random.Bool()) ? f.Random.String2(10) : null,
                 f.Address.Latitude(),
                 f.Address.Longitude()
             ))
