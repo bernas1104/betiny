@@ -206,5 +206,8 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - No `.editorconfig`, no `.cursorrules`, no Copilot instructions file currently exist
 - `.vscode/` and `.idea/` in `.gitignore`
 
+## Technical Refinements
+After a technical refinement is completed, upload it to the respective Github Issue. It should be appended to the issues' description, not added as a issue comment.
+
 ## Updates
 After any changes to the project, update, if necessary, the `README.md` and `AGENTS.md` files.

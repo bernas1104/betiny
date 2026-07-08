@@ -485,8 +485,9 @@ $RECYCLE.BIN/
 .vscode/
 .backup/
 
-# AI Plans
+# AI Files
 .plans/
+.reviews/
 
 # Custom
 src/**/appsettings.**.json
