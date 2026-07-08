@@ -48,36 +48,60 @@ public class Publisher : IPublisher
         CancellationToken ct
     )
     {
-        try
+        if (notificationHandlers.Any())
         {
-            if (notificationHandlers.Any())
+            var tasks = notificationHandlers
+                .Select(async handler => {
+                    await ((dynamic)handler!).Handle((dynamic)notification, ct);
+                })
+                .ToArray();
+
+            await WhenAll(tasks);
+
+            var faultedTasksExceptions = tasks.Where(t => t.IsFaulted)
+                .Select(t => t.Exception?.InnerException)
+                .ToArray();
+
+            if (faultedTasksExceptions.Any())
             {
-                var tasks = notificationHandlers
-                    .Select(async handler => {
-                        await ((dynamic)handler!).Handle((dynamic)notification, ct);
-                    })
-                    .ToArray();
+                LogTasksExceptions(faultedTasksExceptions, notification);
 
-                Task.WaitAll(tasks);
-
-                _logger.LogInformation(
-                    "Successfully handled notification of type {NotificationType} with {HandlerCount} handlers.",
-                    notification.GetType().Name,
-                    notificationHandlers.Length
+                throw new AggregateException(
+                    "One or more errors occurred while handling notification of type " +
+                        $"{notification.GetType().Name}.",
+                    faultedTasksExceptions!
                 );
             }
+
+            _logger.LogInformation(
+                "Successfully handled notification of type {NotificationType} with {HandlerCount} handlers.",
+                notification.GetType().Name,
+                notificationHandlers.Length
+            );
         }
-        catch (AggregateException ex)
+    }
+
+    private async Task WhenAll(IEnumerable<Task> tasks)
+    {
+        try
         {
-            ex.InnerExceptions
-                .ToList()
-                .ForEach(
-                    innerEx => _logger.LogError(
-                        innerEx,
-                        "Failed to handle notification of type {NotificationType}.",
-                        notification.GetType().Name
-                    )
-                );
+            await Task.WhenAll(tasks);
+        }
+        catch
+        {
+            // Swallow for later processing of exceptions
+        }
+    }
+
+    private void LogTasksExceptions(IEnumerable<Exception> exceptions, INotification notification)
+    {
+        foreach (var exception in exceptions)
+        {
+            _logger.LogError(
+                exception,
+                "An error occurred while handling notification of type {NotificationType}.",
+                notification.GetType().Name
+            );
         }
     }
 }

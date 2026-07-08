@@ -68,7 +68,7 @@ public sealed class PublisherTests
     }
 
     [Fact]
-    public async Task Publish_WhenHandlerThrows_LogsError()
+    public async Task Publish_WhenHandlerThrows_LogsErrorAndRethrows()
     {
         var exception = new InvalidOperationException("Handler failed");
         
@@ -85,12 +85,50 @@ public sealed class PublisherTests
 
         var notification = new TestNotification();
         
-        await publisher.Publish(notification);
+        Func<Task> act = async () => await publisher.Publish(notification);
+
+        var hasThrown = await act.Should().ThrowAsync<AggregateException>();
+        hasThrown.WithInnerException<InvalidOperationException>();
 
         _logger.ReceivedCalls()
             .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Error
                 && call.GetArguments()[3] is Exception ex && ex == exception)
             .Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Publish_WhenMultipleHandlersAndOneThrows_LogsAndRethrowsAllFaults()
+    {
+        var exception1 = new InvalidOperationException("Handler 1 failed");
+        
+        var handler1 = Substitute.For<INotificationHandler<TestNotification>>();
+        handler1.Handle(Arg.Any<TestNotification>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(exception1);
+
+        var handler2 = Substitute.For<INotificationHandler<TestNotification>>();
+        handler2.Handle(Arg.Any<TestNotification>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        var serviceProvider = _serviceCollection
+            .AddSingleton(_logger)
+            .AddScoped(_ => handler1)
+            .AddScoped(_ => handler2)
+            .BuildServiceProvider();
+        
+        var publisher = new Publisher(serviceProvider, _logger);
+
+        var notification = new TestNotification();
+        
+        Func<Task> act = async () => await publisher.Publish(notification);
+
+        var hasThrown = await act.Should().ThrowAsync<AggregateException>();
+        hasThrown.WithInnerException<InvalidOperationException>()
+            .Where(ex => ex.Message == "Handler 1 failed");
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Error
+                && call.GetArguments()[3] is Exception ex && ex == exception1)
+            .Should().HaveCount(1);
     }
 }
 

@@ -68,15 +68,14 @@ public class GetByShortUrlQuery
             return Result<GetByShortUrlResponse>.Failure(CreateError(shortUrl));
         }
 
-        await _publisher.Publish(
-            new CreateClickEventNotification(
-                shortUrl,
-                request.UserAgent,
-                request.Referer,
-                request.IpAddress
-            ),
-            cancellationToken
+        var notification = new CreateClickEventNotification(
+            shortUrl,
+            request.UserAgent,
+            request.Referer,
+            request.IpAddress
         );
+
+        await PublishClickEventAsync(notification, cancellationToken);
 
         _logger.LogInformation(
             "Short URL '{ShortUrl}' accessed successfully. Redirecting user to original URL.",
@@ -109,5 +108,26 @@ public class GetByShortUrlQuery
             "Short URL has expired.",
             ErrorSeverity.Medium
         );
+    }
+
+    private Task PublishClickEventAsync(
+        CreateClickEventNotification notification,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            return _publisher.Publish(notification, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Click event tracking failed for short URL '{ShortUrl}'. Redirect proceeding.",
+                notification.ShortUrl.AliasUrl
+            );
+
+            return Task.CompletedTask;
+        }
     }
 }
