@@ -64,7 +64,7 @@ public class Publisher : IPublisher
 
             if (faultedTasksExceptions.Any())
             {
-                LogTasksExceptions(faultedTasksExceptions, notification);
+                LogTasksExceptions(faultedTasksExceptions!, notification);
 
                 throw new AggregateException(
                     "One or more errors occurred while handling notification of type " +
