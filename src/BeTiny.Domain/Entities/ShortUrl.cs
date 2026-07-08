@@ -29,11 +29,11 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     /// </summary>
     /// <param name="originalUrl">The original URL to shorten.</param>
     /// <param name="type">The type of alias (auto-generated short code or custom alias).</param>
-    public ShortUrl(string originalUrl, AliasUrlType type)
+    private ShortUrl(string originalUrl, AliasUrlType type)
     {
         Id = ShortUrlId.CreateUnique();
         OriginalUrl = originalUrl;
-        AliasUrl = null!;
+        AliasUrl = string.Empty;
         Type = type;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
@@ -47,7 +47,7 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     /// <exception cref="ArgumentException">
     /// Thrown when the alias URL is null, whitespace, or does not match type-specific validation rules.
     /// </exception>
-    public void SetAliasUrl(string aliasUrl)
+    private void SetAliasUrl(string aliasUrl)
     {
         if (string.IsNullOrWhiteSpace(aliasUrl))
             throw new ArgumentException("Shortened URL cannot be null or whitespace.", nameof(aliasUrl));
@@ -101,5 +101,47 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
 
             ExpiresAt = expiresAt;
         }
+    }
+
+    /// <summary>
+    /// Creates a new instance of <see cref="ShortUrl"/> using a custom alias.
+    /// </summary>
+    /// <param name="originalUrl">The original URL to be shortened.</param>
+    /// <param name="customAlias">The custom alias for the shortened URL.</param>
+    /// <param name="expiresAt">The expiration date and time in UTC, or <c>null</c> to clear expiration.</param>
+    /// <param name="dateTimeProvider">The date time provider for obtaining the current UTC time.</param>
+    /// <returns>A new instance of <see cref="ShortUrl"/> with the specified short code and expiration.</returns>
+    public static ShortUrl CreateFromShortCode(
+        string originalUrl, 
+        string shortCode,
+        DateTime? expiresAt,
+        IDateTimeProvider dateTimeProvider
+    )
+    {
+        var shortUrl = new ShortUrl(originalUrl, AliasUrlType.ShortCode);
+        shortUrl.SetAliasUrl(shortCode);
+        shortUrl.SetExpiration(expiresAt, dateTimeProvider);
+        return shortUrl;
+    }
+
+    /// <summary>
+    /// Creates a new instance of <see cref="ShortUrl"/> using a custom alias.
+    /// </summary>
+    /// <param name="originalUrl">The original URL to be shortened.</param>
+    /// <param name="customAlias">The custom alias for the shortened URL.</param>
+    /// <param name="expiresAt">The expiration date and time in UTC, or <c>null</c> to clear expiration.</param>
+    /// <param name="dateTimeProvider">The date time provider for obtaining the current UTC time.</param>
+    /// <returns>A new instance of <see cref="ShortUrl"/> with the specified custom alias and expiration.</returns>
+    public static ShortUrl CreateFromCustomAlias(
+        string originalUrl,
+        string customAlias,
+        DateTime? expiresAt,
+        IDateTimeProvider dateTimeProvider
+    )
+    {
+        var shortUrl = new ShortUrl(originalUrl, AliasUrlType.CustomAlias);
+        shortUrl.SetAliasUrl(customAlias);
+        shortUrl.SetExpiration(expiresAt, dateTimeProvider);
+        return shortUrl;
     }
 }

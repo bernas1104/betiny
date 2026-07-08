@@ -56,25 +56,32 @@ public class CreateShortUrlCommand :
     )
     {
         var created = false;
-        ShortUrl shortUrl;
+        ShortUrl shortUrl = default!;
+        
         if (command.CustomAlias is not null)
         {
-            shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.CustomAlias);
-            shortUrl.SetAliasUrl(command.CustomAlias);
-            shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
+            shortUrl = ShortUrl.CreateFromCustomAlias(
+                command.OriginalUrl,
+                command.CustomAlias,
+                command.ExpiresAt,
+                _dateTimeProvider
+            );
 
             created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
         }
         else
         {
-            shortUrl = new ShortUrl(command.OriginalUrl, AliasUrlType.ShortCode);
-            shortUrl.SetExpiration(command.ExpiresAt, _dateTimeProvider);
-            
             var attempts = 0;
             while (!created && attempts < MaxShortCodeGenerationAttempts)
             {
                 var shortCode = await _shortCodeGenerator.GenerateShortCode();
-                shortUrl.SetAliasUrl(shortCode);
+                
+                shortUrl = ShortUrl.CreateFromShortCode(
+                    command.OriginalUrl,
+                    shortCode,
+                    command.ExpiresAt,
+                    _dateTimeProvider
+                );
                 
                 created = await TryAddShortUrlAsync(shortUrl, cancellationToken);
                 attempts++;

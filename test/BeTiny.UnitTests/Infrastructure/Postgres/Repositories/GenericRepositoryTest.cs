@@ -1,5 +1,5 @@
 using BeTiny.Domain.Entities;
-using BeTiny.Domain.Enums;
+using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.Infrastructure.Postgres.Repositories;
@@ -23,8 +23,12 @@ public sealed class GenericRepositoryTest
     [Fact]
     public async Task GetByFilterAsync_WhenEntityMatchesFilter_ReturnsEntity()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("foo");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "foo",
+            null,
+            Substitute.For<IDateTimeProvider>()
+        );
 
         _context.ShortUrls.Add(shortUrl);
         _context.SaveChanges();
@@ -46,8 +50,12 @@ public sealed class GenericRepositoryTest
     [Fact]
     public async Task AddAsync_WhenCalled_AddsEntityToContext()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("bar");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "bar",
+            null,
+            Substitute.For<IDateTimeProvider>()
+        );
 
         await _repository.AddAsync(shortUrl);
 

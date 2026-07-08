@@ -1,5 +1,4 @@
 using BeTiny.Domain.Entities;
-using BeTiny.Domain.Enums;
 using BeTiny.Domain.Interfaces;
 using Bogus;
 
@@ -18,8 +17,12 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_SetsExpiresAt_WhenValidDateTime()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
 
         var baseUtc = DateTime.UtcNow;
         var futureDate = baseUtc.AddDays(1);
@@ -36,8 +39,12 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_ExpiresShortUrl_WhenExpirationDateIsInThePast()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
 
         var baseUtc = DateTime.UtcNow;
         var pastDate = baseUtc.AddDays(-1);
@@ -54,8 +61,12 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_ThrowsArgumentException_WhenDateTimeIsNotUtc()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
 
         var baseUtc = DateTime.UtcNow;
         var nonUtcDate = DateTime.Now.AddDays(1);
@@ -71,9 +82,13 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetExpiration_ThrowsArgumentException_WhenDateTimeIsInThePast()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
-        
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
+
         var baseUtc = DateTime.UtcNow;
         var pastDate = baseUtc.AddDays(-1);
         _dateTimeProvider.UtcNow.Returns(baseUtc);
@@ -88,8 +103,12 @@ public sealed class ShortUrlTest
     [Fact]
     public void IsExpired_ReturnsFalse_WhenExpiresAtIsNull()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
 
         var isExpired = shortUrl.IsExpired(_dateTimeProvider);
 
@@ -99,8 +118,12 @@ public sealed class ShortUrlTest
     [Fact]
     public void IsExpired_ReturnsTrue_WhenExpiresAtIsInThePast()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
 
         var baseUtc = DateTime.UtcNow;
         var futureDate = baseUtc.AddDays(1);
@@ -117,8 +140,12 @@ public sealed class ShortUrlTest
     [Fact]
     public void IsExpired_ReturnsFalse_WhenExpiresAtIsInTheFuture()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
 
         var baseUtc = DateTime.UtcNow;
         var futureDate = baseUtc.AddDays(1);
@@ -133,10 +160,14 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetAliasUrl_SetsAliasUrl_WhenValidShortCode()
     {
-        var shortUrl = new ShortUrl("https://example.com", AliasUrlType.ShortCode);
         var validShortCode = "abc123";
 
-        shortUrl.SetAliasUrl(validShortCode);
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            validShortCode,
+            null,
+            _dateTimeProvider
+        );
 
         shortUrl.AliasUrl.Should().Be(validShortCode);
     }
@@ -144,14 +175,23 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetAliasUrl_ThrowsArgumentException_WhenAliasUrlIsNullOrWhitespace()
     {
-        var shortUrl = new ShortUrl("https://example.com", _faker.PickRandom<AliasUrlType>());
-
-        Action act = () => shortUrl.SetAliasUrl("   ");
+        Action act = () => ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "   ",
+            null,
+            _dateTimeProvider
+        );
 
         act.Should().Throw<ArgumentException>()
             .WithParameterName("aliasUrl");
 
-        act = () => shortUrl.SetAliasUrl(null!);
+        act = () => ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            null!,
+            null,
+            _dateTimeProvider
+        );
+
         act.Should().Throw<ArgumentException>()
             .WithParameterName("aliasUrl");
     }
@@ -159,10 +199,14 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetAliasUrl_ThrowsArgumentException_WhenShortCodeIsTooLong()
     {
-        var shortUrl = new ShortUrl("https://example.com", AliasUrlType.ShortCode);
-        var longShortCode = new string('a', 8);
+        var longShortCode = new string('a', 11);
 
-        Action act = () => shortUrl.SetAliasUrl(longShortCode);
+        Action act = () => ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            longShortCode,
+            null,
+            _dateTimeProvider
+        );
 
         act.Should().Throw<ArgumentException>()
             .WithParameterName("aliasUrl");
@@ -171,10 +215,14 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetAliasUrl_ThrowsArgumentException_WhenCustomAliasIsInvalid()
     {
-        var shortUrl = new ShortUrl("https://example.com", AliasUrlType.CustomAlias);
         var invalidAlias = "invalid alias!";
 
-        Action act = () => shortUrl.SetAliasUrl(invalidAlias);
+        Action act = () => ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            invalidAlias,
+            null,
+            _dateTimeProvider
+        );
 
         act.Should().Throw<ArgumentException>()
             .WithParameterName("aliasUrl");
@@ -183,10 +231,14 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetAliasUrl_ThrowsArgumentException_WhenCustomAliasIsTooShort()
     {
-        var shortUrl = new ShortUrl("https://example.com", AliasUrlType.CustomAlias);
         var invalidAlias = "in";
 
-        Action act = () => shortUrl.SetAliasUrl(invalidAlias);
+        Action act = () => ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            invalidAlias,
+            null,
+            _dateTimeProvider
+        );
 
         act.Should().Throw<ArgumentException>()
             .WithParameterName("aliasUrl");
@@ -195,10 +247,14 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetAliasUrl_ThrowsArgumentException_WhenCustomAliasIsTooLong()
     {
-        var shortUrl = new ShortUrl("https://example.com", AliasUrlType.CustomAlias);
         var invalidAlias = new string('a', 51);
 
-        Action act = () => shortUrl.SetAliasUrl(invalidAlias);
+        Action act = () => ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            invalidAlias,
+            null,
+            _dateTimeProvider
+        );
 
         act.Should().Throw<ArgumentException>()
             .WithParameterName("aliasUrl");
