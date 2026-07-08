@@ -34,6 +34,15 @@ public sealed class IpResolver : IIpResolver
             }
 
             var ipInfo = await _ipApi.GetIpInfoAsync(ipAddress);
+            
+            if (!ipInfo.Success)
+            {
+                _logger.LogInformation("Failed to resolve IP address. Returning 'Unknown'. Error: {Error}",
+                    ipInfo.Message);
+
+                return "Unknown";
+            }
+            
             return ipInfo.Country ?? "Unknown";
         }
         catch (Exception ex)
