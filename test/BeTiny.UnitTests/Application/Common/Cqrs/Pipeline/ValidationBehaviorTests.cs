@@ -43,7 +43,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        result.Errors.Should().NotBeNull();
+        result.Errors.Should().NotBeEmpty();
         result.Errors.Should().AllSatisfy(e => e.ErrorType.Should().Be(ErrorTypes.ValidationError));
         result.Errors.Should().AllSatisfy(e => e.ErrorMessage.Should().Contain("'Value' must not be empty."));
         called.Should().BeFalse();
@@ -71,7 +71,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        result.Errors.Should().BeNull();
+        result.Errors.Should().BeEmpty();
         called.Should().BeTrue();
     }
 
@@ -97,7 +97,7 @@ public class ValidationBehaviorTests
 
         var result = await behavior.Handle(request, next);
 
-        result.Errors.Should().BeNull();
+        result.Errors.Should().BeEmpty();
         called.Should().BeTrue();
     }
 }

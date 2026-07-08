@@ -43,7 +43,23 @@ public abstract class Controller : ControllerBase
             return resultMethod();
         }
 
-        var firstError = result.Errors!.First();
+        if (result.Errors.Count == 0)
+        {
+            return new ObjectResult(
+                new ProblemDetails
+                {
+                    Title = "InternalServerError",
+                    Detail = "An unexpected error occurred.",
+                    Status = 500,
+                    Instance = HttpContext.Request.Path
+                }
+            )
+            {
+                StatusCode = 500
+            };
+        }
+
+        var firstError = result.Errors.First();
         var statusCode = GetStatusCode(firstError.ErrorType);
 
         return new ObjectResult(
@@ -52,7 +68,7 @@ public abstract class Controller : ControllerBase
                 Title = firstError.ErrorType.ToString(),
                 Detail = string.Join(
                     ", ",
-                    result.Errors!.Select(e => e.ErrorMessage)
+                    result.Errors.Select(e => e.ErrorMessage)
                 ),
                 Status = statusCode,
                 Instance = HttpContext.Request.Path
