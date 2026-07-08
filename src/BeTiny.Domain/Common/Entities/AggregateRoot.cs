@@ -7,7 +7,7 @@ namespace BeTiny.Domain.Common.Entities;
 public abstract class AggregateRoot<TId, TIdType> : Entity<TId>
     where TId : AggregateRootId<TIdType>
 {
-    public new TId Id { get; protected set; }
+    public override TId Id { get; protected set; }
 
     #pragma warning disable CS8618
     // Empty constructor needed by EF Core

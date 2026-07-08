@@ -5,7 +5,7 @@ namespace BeTiny.Domain.Common.Entities;
 [ExcludeFromCodeCoverage]
 public abstract class Entity<TIdType>
 {
-    public TIdType Id { get; protected set; }
+    public virtual TIdType Id { get; protected set; }
     public bool IsActive { get; protected set; }
     public DateTime CreatedAt { get; protected set; }
     public DateTime? UpdatedAt { get; protected set; }
