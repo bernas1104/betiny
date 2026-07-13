@@ -60,14 +60,14 @@ public class ValidationBehavior<TRequest, TResponse>
 
                 return new TResponse
                 {
-                    Errors = validationResult.Errors.Select(
+                    Errors = [..validationResult.Errors.Select(
                         e => new Error(
                             ErrorTypes.ValidationError,
                             e.PropertyName,
                             e.ErrorMessage,
                             ErrorSeverity.Low
                         )
-                    ).ToList()
+                    )]
                 };
             }
         }

@@ -8,7 +8,8 @@ A URL shortener built as a system design exercise using **.NET 10** with Clean A
 - Redirect to the original URL via the short code or custom alias.
 - Expired short URLs return **HTTP 410 Gone**.
 - Duplicate short URLs (including custom aliases) return **HTTP 409 Conflict**; auto-generated short codes are retried on collision.
-- Click event tracking on redirect — captures device type, IP address/country, User-Agent, and referer.
+- **Reserved aliases** (e.g. `admin`, `login`, `api`) are blocked from use as custom aliases and from auto-generated short codes; the built-in defaults can be extended via `appsettings.json`. Reserved custom aliases return **HTTP 400 Bad Request**.
+- Click event tracking runs as **fire-and-forget** on redirect — captures device type, IP address/country, User-Agent, and referer; redirects proceed even if tracking fails.
 
 ## Architecture
 
@@ -92,6 +93,12 @@ Environment variables are prefixed with `BETINY_NPGSQL_*` and `BETINY_REDIS_*`:
 |------------------------------|-----------------|------------------------|
 | `IpApi:BaseUrl`              | `http://ip-api.com` | IP geolocation API base URL |
 | `IpApi:TimeoutSeconds`       | `5`             | Request timeout (seconds) |
+
+**ReservedAliasPolicy** (configured in `appsettings.json`):
+
+| Variable                     | Default         | Description            |
+|------------------------------|-----------------|------------------------|
+| `ReservedAliasPolicy:Aliases` | `[]` (empty)   | Extra aliases to block on top of the built-in defaults (`admin`, `login`, `dashboard`, `api`, `auth`, `health`, `swagger`, `docs`). Each entry must match `^[A-Za-z0-9_-]{3,50}$` or startup fails. |
 
 Connection strings are set in `appsettings.Development.json` under `ConnectionStrings:Postgres` and `ConnectionStrings:Redis`.
 

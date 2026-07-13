@@ -63,6 +63,32 @@ public sealed class IpResolverTest
     }
 
     [Fact]
+    public async Task GetCountryByIpAsync_WhenIpApiReturnsFailure_ReturnsUnknown()
+    {
+        // Arrange
+        var ipAddress = _faker.Internet.IpAddress()
+            .MapToIPv4()
+            .ToString();
+
+        var ipApiResponse = IpApiResponseMotherObject.GetResponse(success: false);
+
+        _ipApi.GetIpInfoAsync(ipAddress)
+            .Returns(ipApiResponse);
+
+        // Act
+        var country = await _ipResolver.GetCountryByIpAsync(ipAddress);
+
+        // Assert
+        country.Should().Be("Unknown");
+
+        await _ipApi.Received(1).GetIpInfoAsync(ipAddress);
+        
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Information)
+            .Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task GetCountryByIpAsync_WhenIpApiThrowsException_ReturnsUnknown()
     {
         // Arrange

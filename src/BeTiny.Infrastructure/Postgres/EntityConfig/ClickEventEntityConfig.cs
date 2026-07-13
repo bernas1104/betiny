@@ -15,6 +15,7 @@ public class ClickEventEntityConfig : IEntityTypeConfiguration<ClickEvent>
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id)
+            .ValueGeneratedNever()
             .HasConversion(
                 id => id.Value,
                 value => ClickEventId.Create(value)
@@ -26,7 +27,7 @@ public class ClickEventEntityConfig : IEntityTypeConfiguration<ClickEvent>
                 value => ShortUrlId.Create(value)
             );
 
-        builder.Property(e => e.IpAddress).HasMaxLength(11);
+        builder.Property(e => e.IpAddress).HasMaxLength(45);
         builder.Property(e => e.Country).HasMaxLength(100);
         builder.Property(e => e.UserAgent).HasMaxLength(500);
         builder.Property(e => e.Referer).HasMaxLength(500);

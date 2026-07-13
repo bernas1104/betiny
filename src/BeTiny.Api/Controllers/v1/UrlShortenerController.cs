@@ -19,8 +19,9 @@ public class UrlShortenerController : Controller
     /// Initializes a new instance of the <see cref="UrlShortenerController"/> class.
     /// </summary>
     /// <param name="sender">The sender used to send commands and queries.</param>
-    public UrlShortenerController(ISender sender)
-        : base(sender)
+    /// <param name="logger">The logger used for logging.</param>
+    public UrlShortenerController(ISender sender, ILogger<UrlShortenerController> logger)
+        : base(sender, logger)
     {
     }
 

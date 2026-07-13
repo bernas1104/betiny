@@ -6,6 +6,7 @@ public record IpApiResponse(
     string Query,
     bool Success,
     string? Country,
+    string? Message,
     [property: JsonPropertyName("lat")]
     double Latitude,
     [property: JsonPropertyName("lon")]

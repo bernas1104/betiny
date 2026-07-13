@@ -1,7 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using BeTiny.Domain.Common.Entities;
+using BeTiny.Domain.Common.Interfaces;
 using BeTiny.Domain.Enums;
+using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 
@@ -29,11 +31,11 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     /// </summary>
     /// <param name="originalUrl">The original URL to shorten.</param>
     /// <param name="type">The type of alias (auto-generated short code or custom alias).</param>
-    public ShortUrl(string originalUrl, AliasUrlType type)
+    private ShortUrl(string originalUrl, AliasUrlType type)
     {
         Id = ShortUrlId.CreateUnique();
         OriginalUrl = originalUrl;
-        AliasUrl = null!;
+        AliasUrl = string.Empty;
         Type = type;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
@@ -44,10 +46,14 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     /// Sets the alias URL for this shortened URL, applying validation rules based on the alias type.
     /// </summary>
     /// <param name="aliasUrl">The alias URL value.</param>
+    /// <param name="reservedAliasPolicy">An optional reserved alias policy to check against.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when the alias URL is null, whitespace, or does not match type-specific validation rules.
     /// </exception>
-    public void SetAliasUrl(string aliasUrl)
+    /// <exception cref="ReservedAliasException">
+    /// Thrown when the alias URL is reserved and cannot be used.
+    /// </exception>
+    private void SetAliasUrl(string aliasUrl, IReservedAliasPolicy? reservedAliasPolicy = null)
     {
         if (string.IsNullOrWhiteSpace(aliasUrl))
             throw new ArgumentException("Shortened URL cannot be null or whitespace.", nameof(aliasUrl));
@@ -61,11 +67,14 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
                 nameof(aliasUrl)
             );
 
+        if (reservedAliasPolicy is not null && reservedAliasPolicy.IsReserved(aliasUrl))
+            throw new ReservedAliasException($"The alias '{aliasUrl}' is reserved and cannot be used.");
+
         AliasUrl = aliasUrl;
     }
 
     [GeneratedRegex("^[A-Za-z0-9_-]{3,50}$")]
-    private static partial Regex CustomAliasRegex();
+    public static partial Regex CustomAliasRegex();
 
     /// <summary>
     /// Determines whether this short URL has expired based on the provided date time provider.
@@ -101,5 +110,51 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
 
             ExpiresAt = expiresAt;
         }
+    }
+
+    /// <summary>
+    /// Creates a new instance of <see cref="ShortUrl"/> using a short code.
+    /// </summary>
+    /// <param name="originalUrl">The original URL to be shortened.</param>
+    /// <param name="shortCode">The short code for the shortened URL.</param>
+    /// <param name="expiresAt">The expiration date and time in UTC, or <c>null</c> to clear expiration.</param>
+    /// <param name="dateTimeProvider">The date time provider for obtaining the current UTC time.</param>
+    /// <param name="reservedAliasPolicy">An optional reserved alias policy to check against.</param>
+    /// <returns>A new instance of <see cref="ShortUrl"/> with the specified short code and expiration.</returns>
+    public static ShortUrl CreateFromShortCode(
+        string originalUrl, 
+        string shortCode,
+        DateTime? expiresAt,
+        IDateTimeProvider dateTimeProvider,
+        IReservedAliasPolicy? reservedAliasPolicy = null
+    )
+    {
+        var shortUrl = new ShortUrl(originalUrl, AliasUrlType.ShortCode);
+        shortUrl.SetAliasUrl(shortCode, reservedAliasPolicy);
+        shortUrl.SetExpiration(expiresAt, dateTimeProvider);
+        return shortUrl;
+    }
+
+    /// <summary>
+    /// Creates a new instance of <see cref="ShortUrl"/> using a custom alias.
+    /// </summary>
+    /// <param name="originalUrl">The original URL to be shortened.</param>
+    /// <param name="customAlias">The custom alias for the shortened URL.</param>
+    /// <param name="expiresAt">The expiration date and time in UTC, or <c>null</c> to clear expiration.</param>
+    /// <param name="dateTimeProvider">The date time provider for obtaining the current UTC time.</param>
+    /// <param name="reservedAliasPolicy">An optional reserved alias policy to check against.</param>
+    /// <returns>A new instance of <see cref="ShortUrl"/> with the specified custom alias and expiration.</returns>
+    public static ShortUrl CreateFromCustomAlias(
+        string originalUrl,
+        string customAlias,
+        DateTime? expiresAt,
+        IDateTimeProvider dateTimeProvider,
+        IReservedAliasPolicy? reservedAliasPolicy = null
+    )
+    {
+        var shortUrl = new ShortUrl(originalUrl, AliasUrlType.CustomAlias);
+        shortUrl.SetAliasUrl(customAlias, reservedAliasPolicy);
+        shortUrl.SetExpiration(expiresAt, dateTimeProvider);
+        return shortUrl;
     }
 }

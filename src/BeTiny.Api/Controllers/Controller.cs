@@ -14,15 +14,18 @@ namespace BeTiny.Api.Controllers;
 public abstract class Controller : ControllerBase
 {
     protected readonly ISender _sender;
+    protected readonly ILogger<Controller> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Controller"/> class with 
     /// the specified sender.
     /// </summary>
     /// <param name="sender">The sender used for sending commands and queries.</param>
-    protected Controller(ISender sender)
+    /// <param name="logger">The logger used for logging.</param>
+    protected Controller(ISender sender, ILogger<Controller> logger)
     {
         _sender = sender;
+        _logger = logger;
     }
 
     /// <summary>
@@ -43,7 +46,25 @@ public abstract class Controller : ControllerBase
             return resultMethod();
         }
 
-        var firstError = result.Errors!.First();
+        if (result.Errors.Count == 0)
+        {
+            _logger.LogError("An unexpected error occurred with no specific errors provided.");
+            
+            return new ObjectResult(
+                new ProblemDetails
+                {
+                    Title = "InternalServerError",
+                    Detail = "An unexpected error occurred.",
+                    Status = 500,
+                    Instance = HttpContext.Request.Path
+                }
+            )
+            {
+                StatusCode = 500
+            };
+        }
+
+        var firstError = result.Errors.First();
         var statusCode = GetStatusCode(firstError.ErrorType);
 
         return new ObjectResult(
@@ -52,7 +73,7 @@ public abstract class Controller : ControllerBase
                 Title = firstError.ErrorType.ToString(),
                 Detail = string.Join(
                     ", ",
-                    result.Errors!.Select(e => e.ErrorMessage)
+                    result.Errors.Select(e => e.ErrorMessage)
                 ),
                 Status = statusCode,
                 Instance = HttpContext.Request.Path

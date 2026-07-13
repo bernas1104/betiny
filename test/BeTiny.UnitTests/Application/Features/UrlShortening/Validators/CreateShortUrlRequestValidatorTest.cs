@@ -1,10 +1,18 @@
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
+using BeTiny.Domain.Common.Interfaces;
 
 namespace BeTiny.UnitTests.Application.Features.UrlShortening.Validators;
 
 public class CreateShortUrlRequestValidatorTest
 {
-    private readonly CreateShortUrlRequestValidator _validator = new();
+    private readonly IReservedAliasPolicy _reservedAliasPolicy;
+    private readonly CreateShortUrlRequestValidator _validator;
+
+    public CreateShortUrlRequestValidatorTest()
+    {
+        _reservedAliasPolicy = Substitute.For<IReservedAliasPolicy>();
+        _validator = new CreateShortUrlRequestValidator(_reservedAliasPolicy);
+    }
 
     [Theory]
     [InlineData("http://example.com")]
@@ -47,13 +55,12 @@ public class CreateShortUrlRequestValidatorTest
         result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.OriginalUrl));
     }
 
-    public static IEnumerable<object[]> InvalidCustomAliasData => new[]
-    {
+    public static IEnumerable<object[]> InvalidCustomAliasData => [
         ["ab"],
         ["a"],
         ["a".PadLeft(51, 'a')],
-        new object[] { "invalid alias!" }
-    };
+        ["invalid alias!"]
+    ];
 
     [Theory]
     [MemberData(nameof(InvalidCustomAliasData))]
@@ -65,6 +72,37 @@ public class CreateShortUrlRequestValidatorTest
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.CustomAlias));
+    }
+
+    [Fact]
+    public void GivenCustomAliasThatIsReserved_WhenValidated_ThenErrors()
+    {
+        var reservedAlias = "reserved-alias";
+        _reservedAliasPolicy.IsReserved(reservedAlias).Returns(true);
+
+        var request = new CreateShortUrlRequest("http://example.com", reservedAlias);
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should()
+            .Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.CustomAlias));
+    }
+
+    [Fact]
+    public void GivenReservedCustomAliasInDifferentCase_WhenValidated_ThenErrors()
+    {
+        _reservedAliasPolicy
+            .IsReserved(Arg.Is<string>(s => s.Equals("admin", StringComparison.OrdinalIgnoreCase)))
+            .Returns(true);
+
+        var request = new CreateShortUrlRequest("http://example.com", "ADMIN");
+
+        var result = _validator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should()
+            .Contain(e => e.PropertyName == nameof(CreateShortUrlRequest.CustomAlias));
     }
 
     [Fact]

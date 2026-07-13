@@ -4,11 +4,11 @@ using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Events.ClickEvents.Create;
 using BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 using BeTiny.Domain.Entities;
-using BeTiny.Domain.Enums;
 using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Bogus;
 using Microsoft.Extensions.Logging;
+using NSubstitute.ExceptionExtensions;
 
 namespace BeTiny.UnitTests.Application.Features.UrlShortening.Queries;
 
@@ -41,12 +41,20 @@ public class GetByShortUrlQueryTest
         // Arrange
         var expectedCountry = _faker.Address.Country();
 
-        var shortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("abc123");
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "http://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
 
         Expression<Func<ShortUrl, bool>>? capturedExpression = null;
-        var wrongShortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
-        wrongShortUrl.SetAliasUrl("wrong");
+        var wrongShortUrl = ShortUrl.CreateFromShortCode(
+            "http://example.com",
+            "wrong",
+            null,
+            _dateTimeProvider
+        );
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
@@ -98,8 +106,12 @@ public class GetByShortUrlQueryTest
         // Arrange
         var expectedCountry = _faker.Address.Country();
 
-        var shortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
-        shortUrl.SetAliasUrl("foo123");
+        var shortUrl = ShortUrl.CreateFromCustomAlias(
+            "http://example.com",
+            "foo123",
+            null,
+            _dateTimeProvider
+        );
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
@@ -134,11 +146,66 @@ public class GetByShortUrlQueryTest
     }
 
     [Fact]
+    public async Task Handle_ShouldLogWarningAndReturnSuccess_WhenPublishClickEventFails()
+    {
+        var expectedCountry = _faker.Address.Country();
+
+        var shortUrl = ShortUrl.CreateFromCustomAlias(
+            "http://example.com",
+            "foo123",
+            null,
+            _dateTimeProvider
+        );
+
+        _shortUrlRepository.GetByFilterAsync(
+            Arg.Any<Expression<Func<ShortUrl, bool>>>(),
+            Arg.Any<CancellationToken>()
+        ).Returns(shortUrl);
+
+        _publisher.Publish(
+            Arg.Any<CreateClickEventNotification>(),
+            Arg.Any<CancellationToken>()
+        ).ThrowsAsync(new Exception("Simulated failure"));
+
+        var request = new GetByShortUrlRequest(
+            "foo123",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "http://unittest.com",
+            "127.0.0.1"
+        );
+
+        // Act
+        var result = await _query.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        await _publisher.Received(1).Publish(
+            Arg.Is<CreateClickEventNotification>(n =>
+                n.ShortUrl.Id == shortUrl.Id &&
+                n.IpAddress == "127.0.0.1" &&
+                n.UserAgent == "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" &&
+                n.Referer == "http://unittest.com"
+            ),
+            Arg.Any<CancellationToken>()
+        );
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning
+                && call.GetArguments()[3] is Exception)
+            .Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task Handle_ShouldReturnFailureResult_WhenShortUrlDoesNotExist()
     {
         // Arrange
-        var nonExistentShortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
-        nonExistentShortUrl.SetAliasUrl("nExist");
+        var nonExistentShortUrl = ShortUrl.CreateFromCustomAlias(
+            "http://example.com",
+            "nExist",
+            null,
+            _dateTimeProvider
+        );
 
         _shortUrlRepository.GetByFilterAsync(
             Arg.Any<Expression<Func<ShortUrl, bool>>>(),
@@ -175,8 +242,12 @@ public class GetByShortUrlQueryTest
     public async Task Handle_ShouldReturnFailureResult_WhenShortUrlIsExpired()
     {
         // Arrange
-        var expiredShortUrl = new ShortUrl("http://example.com", _faker.PickRandom<AliasUrlType>());
-        expiredShortUrl.SetAliasUrl("expired");
+        var expiredShortUrl = ShortUrl.CreateFromCustomAlias(
+            "http://example.com",
+            "expired",
+            null,
+            _dateTimeProvider
+        );
 
         var baseUtc = DateTime.UtcNow;
 

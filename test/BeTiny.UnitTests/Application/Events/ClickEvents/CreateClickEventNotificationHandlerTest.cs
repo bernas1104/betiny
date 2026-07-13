@@ -2,7 +2,7 @@ using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Events.ClickEvents.Create;
 using BeTiny.Domain.Entities;
-using BeTiny.Domain.Enums;
+using BeTiny.Domain.Interfaces;
 using BeTiny.Domain.ValueObjects;
 using Bogus;
 using Microsoft.Extensions.Logging;
@@ -34,9 +34,11 @@ public class CreateClickEventNotificationHandlerTest
         // Arrange
         var notification = new CreateClickEventNotification(
             new Faker<ShortUrl>().CustomInstantiator(
-                f => new (
+                f => ShortUrl.CreateFromShortCode(
                     "http://example.com",
-                    f.PickRandom<AliasUrlType>()
+                    f.Random.AlphaNumeric(f.Random.Int(3, 7)),
+                    null,
+                    Substitute.For<IDateTimeProvider>()
                 )
             ).Generate(),
             _faker.Internet.UserAgent(),
@@ -61,9 +63,11 @@ public class CreateClickEventNotificationHandlerTest
         // Arrange
         var notification = new CreateClickEventNotification(
             new Faker<ShortUrl>().CustomInstantiator(
-                f => new (
+                f => ShortUrl.CreateFromShortCode(
                     "http://example.com",
-                    f.PickRandom<AliasUrlType>()
+                    f.Random.AlphaNumeric(f.Random.Int(3, 7)),
+                    null,
+                    Substitute.For<IDateTimeProvider>()
                 )
             ).Generate(),
             _faker.Internet.UserAgent(),
@@ -93,9 +97,11 @@ public class CreateClickEventNotificationHandlerTest
         // Arrange
         var notification = new CreateClickEventNotification(
             new Faker<ShortUrl>().CustomInstantiator(
-                f => new (
+                f => ShortUrl.CreateFromShortCode(
                     "http://example.com",
-                    f.PickRandom<AliasUrlType>()
+                    f.Random.AlphaNumeric(f.Random.Int(3, 7)),
+                    null,
+                    Substitute.For<IDateTimeProvider>()
                 )
             ).Generate(),
             _faker.Internet.UserAgent(),

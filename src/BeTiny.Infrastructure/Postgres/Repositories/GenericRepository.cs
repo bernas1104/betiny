@@ -83,6 +83,16 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
             .AnyAsync(filter, ct);
     }
 
+    /// <inheritdoc/>
+    public void Detach(TEntity entity)
+    {
+        var entry = _context.Entry(entity);
+        if (entry.State != EntityState.Detached)
+        {
+            entry.State = EntityState.Detached;
+        }
+    }
+
     private Task<int> SaveChanges(CancellationToken ct = default)
     {
         return _context.SaveChangesAsync(ct);

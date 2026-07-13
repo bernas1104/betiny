@@ -35,4 +35,12 @@ public interface IRepository<TEntity, TId, TIdType>
         Expression<Func<TEntity, bool>> filter,
         CancellationToken ct = default
     );
+
+    /// <summary>
+    /// Detaches the specified entity from the repository's tracking context.
+    /// This is useful when you want to discard changes made to the entity
+    /// or when handling exceptions that require rolling back changes.
+    /// </summary>
+    /// <param name="entity">The entity to detach.</param>
+    void Detach(TEntity entity);
 }

@@ -13,10 +13,10 @@ public class Result<TResponse> : IResult
     [JsonPropertyOrder(-3)]
     public TResponse? Value { get; init; }
     [JsonPropertyOrder(-2)]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public IReadOnlyCollection<Error>? Errors { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public IReadOnlyCollection<Error> Errors { get; init; } = Array.Empty<Error>();
     [JsonIgnore]
-    public bool IsSuccess => Errors == null || Errors.Count == 0;
+    public bool IsSuccess => Errors.Count == 0;
 
     /// <summary>
     /// Creates a successful result with the specified value.
@@ -35,7 +35,7 @@ public class Result<TResponse> : IResult
     /// <returns>A <see cref="Result{TResponse}"/> representing a failed operation.</returns>
     public static Result<TResponse> Failure(params Error[] errors)
     {
-        if (errors == null || errors.Length == 0)
+        if (errors.Length == 0)
             throw new ArgumentException(
                 "At least one error must be provided for a failed result.",
                 nameof(errors)

@@ -1,10 +1,9 @@
 using BeTiny.Application.Common.Enums;
-using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Models;
 
 namespace BeTiny.UnitTests.Application.Common.Models;
 
-public class ResultTests
+public class ResultTest
 {
     [Fact]
     public void Success_WhenCalled_ShouldCreateSuccessfulResult()
@@ -18,7 +17,7 @@ public class ResultTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(expectedValue);
-        result.Errors.Should().BeNull();
+        result.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -36,12 +35,12 @@ public class ResultTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Value.Should().BeNull();
-        result.Errors.Should().NotBeNull();
+        result.Errors.Should().NotBeEmpty();
         result.Errors.Should().ContainSingle();
-        result.Errors!.First().ErrorType.Should().Be(errorType);
-        result.Errors!.First().PropertyName.Should().Be("PropertyName");
-        result.Errors!.First().ErrorMessage.Should().Be(errorMessage);
-        result.Errors!.First().Severity.Should().Be(ErrorSeverity.Low);
+        result.Errors.First().ErrorType.Should().Be(errorType);
+        result.Errors.First().PropertyName.Should().Be("PropertyName");
+        result.Errors.First().ErrorMessage.Should().Be(errorMessage);
+        result.Errors.First().Severity.Should().Be(ErrorSeverity.Low);
     }
 
     [Fact]
@@ -57,18 +56,10 @@ public class ResultTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Value.Should().BeNull();
-        result.Errors.Should().NotBeNull();
+        result.Errors.Should().NotBeEmpty();
         result.Errors.Should().HaveCount(2);
         result.Errors.Should().Contain(e => e.ErrorMessage == "Error 1");
         result.Errors.Should().Contain(e => e.ErrorMessage == "Error 2");
-    }
-
-    [Fact]
-    public void Failure_WhenErrorsNull_ShouldThrowArgumentException()
-    {
-        // Act & Assert
-        Action act = () => Result<string>.Failure(null!);
-        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
