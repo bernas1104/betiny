@@ -5,11 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs;
 
-public sealed class SenderTests
+public sealed class SenderTest
 {
     private readonly ServiceCollection _serviceCollection;
 
-    public SenderTests()
+    public SenderTest()
     {
         _serviceCollection = new ServiceCollection();
     }

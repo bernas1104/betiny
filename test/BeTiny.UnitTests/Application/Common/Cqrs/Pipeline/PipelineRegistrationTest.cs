@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs.Pipeline;
 
-public class PipelineRegistrationTests
+public class PipelineRegistrationTest
 {
     [Fact]
     public void PipelineBehaviors_Are_Resolvable_For_CreateShortUrlRequest()

@@ -1,5 +1,6 @@
 using BeTiny.Application.Common.Interfaces.Cqrs.Contracts;
 using BeTiny.Application.Common.Models;
+using BeTiny.Domain.Common.Interfaces;
 using FluentValidation;
 
 namespace BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
@@ -25,7 +26,7 @@ public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateSho
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateShortUrlRequestValidator"/> class.
     /// </summary>
-    public CreateShortUrlRequestValidator()
+    public CreateShortUrlRequestValidator(IReservedAliasPolicy reservedAliasPolicy)
     {
         RuleFor(x => x.OriginalUrl)
             .NotEmpty()
@@ -40,6 +41,8 @@ public sealed class CreateShortUrlRequestValidator : AbstractValidator<CreateSho
             .MaximumLength(50)
             .Matches("^[a-zA-Z0-9_-]+$")
             .WithMessage("The CustomAlias can only contain letters, numbers, underscores, and hyphens.")
+            .Must(alias => !reservedAliasPolicy.IsReserved(alias))
+            .WithMessage(x => $"The alias '{x.CustomAlias}' is reserved and cannot be used.")
             .When(x => x.CustomAlias is not null);
 
         RuleFor(x => x.ExpiresAt)

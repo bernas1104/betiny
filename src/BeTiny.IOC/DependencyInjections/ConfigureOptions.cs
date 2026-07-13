@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using BeTiny.Application.Common.Options;
+using BeTiny.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,9 +20,34 @@ public static class ConfigureOptions
         IConfiguration configuration
     )
     {
-        // Place to register options configuration from app settings, e.g.:
-        // services.Configure<MyOptions>(configuration.GetSection("MyOptions"));
+        services.ConfigureReservedAliasOptions(configuration);
 
         return services;
+    }
+
+    private static void ConfigureReservedAliasOptions(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        var reservedAliasOptionsSection = configuration.GetSection("ReservedAliasPolicy");
+        var reservedAliasOptions = reservedAliasOptionsSection.Get<ReservedAliasOptions>()?.Aliases;
+
+        if (
+            reservedAliasOptions == null ||
+                reservedAliasOptions.Any(x => ShortUrl.CustomAliasRegex().IsMatch(x.Trim()) is false)
+        )
+        {
+            throw new InvalidOperationException(
+                "ReservedAliases configuration is invalid. Ensure all aliases are non-empty and " +
+                    "match the required pattern.",
+                new ArgumentException(
+                    "One or more reserved aliases are invalid. Each entry must be non-empty and " +
+                        "match the required pattern."
+                )
+            );
+        }
+
+        services.Configure<ReservedAliasOptions>(reservedAliasOptionsSection);
     }
 }

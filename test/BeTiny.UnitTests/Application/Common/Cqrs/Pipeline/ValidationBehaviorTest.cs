@@ -19,7 +19,7 @@ public sealed class DummyRequestValidator : AbstractValidator<DummyRequest>
     }
 }
 
-public class ValidationBehaviorTests
+public class ValidationBehaviorTest
 {
     [Fact]
     public async Task Handle_InvalidRequest_ReturnsValidationFailure()

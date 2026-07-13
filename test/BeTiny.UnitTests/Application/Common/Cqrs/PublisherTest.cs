@@ -6,12 +6,12 @@ using NSubstitute.ExceptionExtensions;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs;
 
-public sealed class PublisherTests
+public sealed class PublisherTest
 {
     private readonly ServiceCollection _serviceCollection;
     private readonly ILogger<Publisher> _logger;
 
-    public PublisherTests()
+    public PublisherTest()
     {
         _serviceCollection = new ServiceCollection();
         _logger = Substitute.For<ILogger<Publisher>>();

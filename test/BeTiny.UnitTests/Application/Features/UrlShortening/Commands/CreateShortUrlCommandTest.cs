@@ -2,6 +2,7 @@ using BeTiny.Application.Common.Enums;
 using BeTiny.Application.Common.Interfaces.Repositories;
 using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
+using BeTiny.Domain.Common.Interfaces;
 using BeTiny.Domain.Entities;
 using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.Interfaces;
@@ -17,6 +18,7 @@ public class CreateShortUrlCommandTest
     private readonly IShortCodeGenerator _shortCodeGenerator;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<CreateShortUrlCommand> _logger;
+    private readonly IReservedAliasPolicy _reservedAliasPolicy;
     private readonly CreateShortUrlCommand _handler;
 
     public CreateShortUrlCommandTest()
@@ -24,12 +26,15 @@ public class CreateShortUrlCommandTest
         _shortUrlRepository = Substitute.For<IRepository<ShortUrl, ShortUrlId, Guid>>();
         _shortCodeGenerator = Substitute.For<IShortCodeGenerator>();
         _dateTimeProvider = Substitute.For<IDateTimeProvider>();
+        _reservedAliasPolicy = Substitute.For<IReservedAliasPolicy>();
+
         _logger = Substitute.For<ILogger<CreateShortUrlCommand>>();
 
         _handler = new CreateShortUrlCommand(
             _shortUrlRepository,
             _shortCodeGenerator,
             _dateTimeProvider,
+            _reservedAliasPolicy,
             _logger
         );
     }
@@ -114,6 +119,52 @@ public class CreateShortUrlCommandTest
     }
 
     [Fact]
+    public async Task Handle_WhenShortCodeGeneratorGeneratesReservedAlias_ShouldRetryWithNewShortCode()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var reservedShortCode = "reserved";
+        var validShortCode = "valid";
+
+        _shortCodeGenerator.GenerateShortCode()
+            .Returns(reservedShortCode, validShortCode);
+
+        _reservedAliasPolicy.IsReserved(reservedShortCode).Returns(true);
+        _reservedAliasPolicy.IsReserved(validShortCode).Returns(false);
+
+        var request = new CreateShortUrlRequest(originalUrl);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.ShortUrl.Should().Be(validShortCode);
+
+        await _shortCodeGenerator.Received(2).GenerateShortCode();
+
+        await _shortUrlRepository.Received(1)
+            .AddAsync(
+                Arg.Is<ShortUrl>(
+                    s => s.OriginalUrl == originalUrl
+                        && s.AliasUrl == validShortCode
+                ),
+                Arg.Any<CancellationToken>()
+            );
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
+            .Should()
+            .ContainSingle();
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Information)
+            .Should()
+            .ContainSingle();
+    }
+
+    [Fact]
     public async Task Handle_WhenShortCodeThrowsDuplicateAliasUrlExceptionMultipleTimes_ReturnsFailureResult()
     {
         // Arrange
@@ -159,6 +210,39 @@ public class CreateShortUrlCommandTest
 
         _logger.ReceivedCalls()
             .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Information)
+            .Should()
+            .HaveCount(CreateShortUrlCommand.MaxShortCodeGenerationAttempts);
+    }
+
+    [Fact]
+    public async Task Handle_WhenShortCodeGeneratorGeneratesReservedAliasMultipleTimes_ReturnsFailureResult()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var reservedShortCode = "reserved";
+
+        _shortCodeGenerator.GenerateShortCode()
+            .Returns(reservedShortCode);
+
+        _reservedAliasPolicy.IsReserved(reservedShortCode).Returns(true);
+
+        var request = new CreateShortUrlRequest(originalUrl);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ConflictError);
+
+        await _shortCodeGenerator.Received(CreateShortUrlCommand.MaxShortCodeGenerationAttempts)
+            .GenerateShortCode();
+
+        await _shortUrlRepository.DidNotReceive()
+            .AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>());
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
             .Should()
             .HaveCount(CreateShortUrlCommand.MaxShortCodeGenerationAttempts);
     }
@@ -214,6 +298,33 @@ public class CreateShortUrlCommandTest
         result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ConflictError);
 
         await _shortUrlRepository.Received(1)
+            .AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>());
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
+            .Should()
+            .ContainSingle();
+    }
+
+    [Fact]
+    public async Task Handle_WhenCustomAliasReserved_AndValidatorBypassed_ReturnsFailureResult()
+    {
+        // Arrange
+        var originalUrl = "https://www.example.com";
+        var reservedAlias = "admin";
+
+        _reservedAliasPolicy.IsReserved(reservedAlias).Returns(true);
+
+        var request = new CreateShortUrlRequest(originalUrl, reservedAlias);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ValidationError);
+
+        await _shortUrlRepository.DidNotReceive()
             .AddAsync(Arg.Any<ShortUrl>(), Arg.Any<CancellationToken>());
 
         _logger.ReceivedCalls()

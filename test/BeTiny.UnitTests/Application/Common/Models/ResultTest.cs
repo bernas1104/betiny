@@ -3,7 +3,7 @@ using BeTiny.Application.Common.Models;
 
 namespace BeTiny.UnitTests.Application.Common.Models;
 
-public class ResultTests
+public class ResultTest
 {
     [Fact]
     public void Success_WhenCalled_ShouldCreateSuccessfulResult()

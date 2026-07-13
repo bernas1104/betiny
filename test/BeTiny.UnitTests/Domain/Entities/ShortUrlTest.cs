@@ -1,4 +1,7 @@
+using BeTiny.Application.Common.Options;
+using BeTiny.Domain.Common.Interfaces;
 using BeTiny.Domain.Entities;
+using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.Interfaces;
 using Bogus;
 
@@ -7,11 +10,13 @@ namespace BeTiny.UnitTests.Domain.Entities;
 public sealed class ShortUrlTest
 {
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IReservedAliasPolicy _reservedAliasPolicy;
     private readonly Faker _faker = new ();
 
     public ShortUrlTest()
     {
         _dateTimeProvider = Substitute.For<IDateTimeProvider>();
+        _reservedAliasPolicy = Substitute.For<IReservedAliasPolicy>();
     }
 
     [Fact]
@@ -173,6 +178,25 @@ public sealed class ShortUrlTest
     }
 
     [Fact]
+    public void SetAliasUrl_SetsAliasUrl_WhenCustomAliasNotReservedAndPolicyProvided()
+    {
+        var validCustomAlias = "custom-alias";
+        
+        var reservedAliasPolicy = Substitute.For<IReservedAliasPolicy>();
+        reservedAliasPolicy.IsReserved(validCustomAlias).Returns(false);
+
+        var shortUrl = ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            validCustomAlias,
+            null,
+            _dateTimeProvider,
+            reservedAliasPolicy
+        );
+
+        shortUrl.AliasUrl.Should().Be(validCustomAlias);
+    }
+
+    [Fact]
     public void SetAliasUrl_ThrowsArgumentException_WhenAliasUrlIsNullOrWhitespace()
     {
         Action act = () => ShortUrl.CreateFromShortCode(
@@ -259,4 +283,107 @@ public sealed class ShortUrlTest
         act.Should().Throw<ArgumentException>()
             .WithParameterName("aliasUrl");
     }
+
+    public static IEnumerable<object[]> DefaultReservedAliases => 
+        new ReservedAliasDefaults().Aliases.Select(alias => new object[] { alias });
+
+    [Theory]
+    [MemberData(nameof(DefaultReservedAliases))]
+    public void SetAliasUrl_ThrowsReservedAliasException_WhenCustomAliasIsReservedAndPolicyProvided(
+        string reservedAlias
+    )
+    {
+        _reservedAliasPolicy.IsReserved(reservedAlias).Returns(true);
+
+        Action act = () => ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            reservedAlias,
+            null,
+            _dateTimeProvider,
+            _reservedAliasPolicy
+        );
+
+        act.Should().Throw<ReservedAliasException>();
+    }
+
+    [Fact]
+    public void SetAliasUrl_ThrowsReservedAliasException_WhenShortCodeIsReservedAndPolicyProvided()
+    {
+        var reservedShortCode = GenerateRandomAlias();
+
+        _reservedAliasPolicy.IsReserved(reservedShortCode).Returns(true);
+
+        Action act = () => ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            reservedShortCode,
+            null,
+            _dateTimeProvider,
+            _reservedAliasPolicy
+        );
+
+        act.Should().Throw<ReservedAliasException>();
+    }
+
+    [Fact]
+    public void SetAliasUrl_SetsAliasUrl_WhenShortCodeNotReservedAndPolicyProvided()
+    {
+        var validShortCode = GenerateRandomAlias();
+
+        _reservedAliasPolicy.IsReserved(validShortCode).Returns(false);
+
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            validShortCode,
+            null,
+            _dateTimeProvider,
+            _reservedAliasPolicy
+        );
+
+        shortUrl.AliasUrl.Should().Be(validShortCode);
+    }
+
+    [Fact]
+    public void SetAliasUrl_SetsAliasUrl_WhenPolicyNullAndAliasReserved()
+    {
+        var reservedAlias = GenerateRandomAlias();
+
+        var shortUrl = ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            reservedAlias,
+            null,
+            _dateTimeProvider,
+            null
+        );
+
+        shortUrl.AliasUrl.Should().Be(reservedAlias);
+    }
+
+    [Fact]
+    public void SetAliasUrl_ThrowsReservedAliasException_WhenCustomAliasReservedInAnyCase()
+    {
+        _reservedAliasPolicy.IsReserved(
+            Arg.Is<string>(alias => alias.Equals("admin", StringComparison.OrdinalIgnoreCase))
+        ).Returns(true);
+
+        Action actLowerCase = () => ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            "admin",
+            null,
+            _dateTimeProvider,
+            _reservedAliasPolicy
+        );
+
+        Action actUpperCase = () => ShortUrl.CreateFromCustomAlias(
+            "https://example.com",
+            "ADMIN",
+            null,
+            _dateTimeProvider,
+            _reservedAliasPolicy
+        );
+
+        actLowerCase.Should().Throw<ReservedAliasException>();
+        actUpperCase.Should().Throw<ReservedAliasException>();
+    }
+
+    private string GenerateRandomAlias() => _faker.Random.AlphaNumeric(_faker.Random.Int(3, 7));
 }

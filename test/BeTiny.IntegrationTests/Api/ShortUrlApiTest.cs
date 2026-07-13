@@ -133,6 +133,30 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
     }
 
     [Fact]
+    public async Task ShortenUrl_WithReservedCustomAlias_ReturnsBadRequest()
+    {
+        var request = new CreateShortUrlRequest("https://www.example.com", "admin");
+        var json = JsonSerializer.Serialize(request);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await Client.PostAsync("/api/v1/UrlShortener", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<ProblemDetails>(
+            responseBody,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }
+        );
+
+        result.Should().NotBeNull();
+        result!.Title.Should().Be("ValidationError");
+    }
+
+    [Fact]
     public async Task GetByShortUrl_ReturnsOriginalUrl_WhenShortUrlExists()
     {
         using var scope = Factory.Services.CreateScope();

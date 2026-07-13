@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 
 namespace BeTiny.UnitTests.Application.Common.Cqrs.Pipeline;
 
-public sealed class LoggingBehaviorTests
+public sealed class LoggingBehaviorTest
 {
     private readonly ILogger<LoggingBehavior<TestRequest, string>> _logger;
     private readonly LoggingBehavior<TestRequest, string> _loggingBehavior;
 
-    public LoggingBehaviorTests()
+    public LoggingBehaviorTest()
     {
         _logger = Substitute.For<ILogger<LoggingBehavior<TestRequest, string>>>();
         _loggingBehavior = new LoggingBehavior<TestRequest, string>(_logger);
