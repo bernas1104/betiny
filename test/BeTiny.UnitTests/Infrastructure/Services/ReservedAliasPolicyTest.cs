@@ -69,11 +69,12 @@ public sealed class ReservedAliasPolicyTest
         act.Should().NotThrow();
     }
 
-    public static IEnumerable<object[]> InvalidReservedAliasOptions => [
+    public static IEnumerable<object?[]> InvalidReservedAliasOptions => [
         ["v1"],
         [""],
         ["  "],
-        [new string('a', 51)]
+        [new string('a', 51)],
+        [null]
     ];
 
     [Theory]
