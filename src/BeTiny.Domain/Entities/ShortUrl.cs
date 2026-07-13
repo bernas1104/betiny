@@ -113,7 +113,7 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
     }
 
     /// <summary>
-    /// Creates a new instance of <see cref="ShortUrl"/> using a custom alias.
+    /// Creates a new instance of <see cref="ShortUrl"/> using a short code.
     /// </summary>
     /// <param name="originalUrl">The original URL to be shortened.</param>
     /// <param name="shortCode">The short code for the shortened URL.</param>

@@ -35,7 +35,9 @@ public static class ConfigureOptions
 
         if (
             reservedAliasOptions == null ||
-                reservedAliasOptions.Any(x => ShortUrl.CustomAliasRegex().IsMatch(x.Trim()) is false)
+                reservedAliasOptions.Any(
+                    x => x is null || ShortUrl.CustomAliasRegex().IsMatch(x.Trim()) is false
+                )
         )
         {
             throw new InvalidOperationException(

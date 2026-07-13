@@ -27,6 +27,17 @@ public sealed class ReservedAliasPolicy : IReservedAliasPolicy
 
         foreach (var alias in aliasOptions.Value.Aliases)
         {
+            if (alias is null)
+            {
+                throw new InvalidOperationException(
+                    "Reserved alias options contain a null entry.",
+                    new ArgumentException(
+                        "Reserved alias options cannot contain null entries. Each entry must be non-empty and " +
+                            "match the required pattern."
+                    )
+                );
+            }
+            
             var trimmed = alias.Trim();
 
             if (!ShortUrl.CustomAliasRegex().IsMatch(trimmed))
