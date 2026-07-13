@@ -345,7 +345,7 @@ public sealed class ShortUrlTest
     [Fact]
     public void SetAliasUrl_SetsAliasUrl_WhenPolicyNullAndAliasReserved()
     {
-        var reservedAlias = GenerateRandomAlias();
+        var reservedAlias = new ReservedAliasDefaults().Aliases.First();
 
         var shortUrl = ShortUrl.CreateFromCustomAlias(
             "https://example.com",

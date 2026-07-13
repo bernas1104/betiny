@@ -133,7 +133,7 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
     }
 
     [Fact]
-    public async Task ShortenUrl_WithReservedCustomAlias_ReturnsBadRequest()
+    public async Task CreateShortUrl_WithReservedCustomAlias_ReturnsBadRequest()
     {
         var request = new CreateShortUrlRequest("https://www.example.com", "admin");
         var json = JsonSerializer.Serialize(request);

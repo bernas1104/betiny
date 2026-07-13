@@ -189,6 +189,11 @@ public class GetByShortUrlQueryTest
             ),
             Arg.Any<CancellationToken>()
         );
+
+        _logger.ReceivedCalls()
+            .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning
+                && call.GetArguments()[3] is Exception)
+            .Should().ContainSingle();
     }
 
     [Fact]

@@ -38,11 +38,11 @@ public class Publisher : IPublisher
                 .GetServices(handlerType)
                 .ToArray();
 
-            await TryExecuteHandlers(notificationHandlers, notification, ct);
+            await TryExecuteHandlersAsync(notificationHandlers, notification, ct);
         }
     }
 
-    private async Task TryExecuteHandlers(
+    private async Task TryExecuteHandlersAsync(
         object?[] notificationHandlers,
         INotification notification,
         CancellationToken ct
@@ -56,7 +56,7 @@ public class Publisher : IPublisher
                 })
                 .ToArray();
 
-            await WhenAll(tasks);
+            await WhenAllAsync(tasks);
 
             var faultedTasksExceptions = tasks.Where(t => t.IsFaulted)
                 .Select(t => t.Exception?.InnerException)
@@ -81,7 +81,7 @@ public class Publisher : IPublisher
         }
     }
 
-    private async Task WhenAll(IEnumerable<Task> tasks)
+    private async Task WhenAllAsync(IEnumerable<Task> tasks)
     {
         try
         {

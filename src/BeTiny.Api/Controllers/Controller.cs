@@ -14,15 +14,18 @@ namespace BeTiny.Api.Controllers;
 public abstract class Controller : ControllerBase
 {
     protected readonly ISender _sender;
+    protected readonly ILogger<Controller> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Controller"/> class with 
     /// the specified sender.
     /// </summary>
     /// <param name="sender">The sender used for sending commands and queries.</param>
-    protected Controller(ISender sender)
+    /// <param name="logger">The logger used for logging.</param>
+    protected Controller(ISender sender, ILogger<Controller> logger)
     {
         _sender = sender;
+        _logger = logger;
     }
 
     /// <summary>
@@ -45,6 +48,8 @@ public abstract class Controller : ControllerBase
 
         if (result.Errors.Count == 0)
         {
+            _logger.LogError("An unexpected error occurred with no specific errors provided.");
+            
             return new ObjectResult(
                 new ProblemDetails
                 {
