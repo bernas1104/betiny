@@ -7,7 +7,7 @@ public class RegisterRequestValidatorTest
     private readonly RegisterRequestValidator _validator = new();
 
     [Fact]
-    public void GivenValidEmailAndPassword_WhenValidated_ThenNoErrors()
+    public void Validate_ValidEmailAndPassword_ReturnsSuccess()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
 
@@ -17,7 +17,7 @@ public class RegisterRequestValidatorTest
     }
 
     [Fact]
-    public void GivenWhitespacePaddedValidEmail_WhenValidated_ThenNoErrors()
+    public void Validate_WhitespacePaddedEmail_ReturnsSuccess()
     {
         var request = new RegisterRequest("  user@example.com  ", "Password1");
 
@@ -30,7 +30,7 @@ public class RegisterRequestValidatorTest
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void GivenEmptyEmail_WhenValidated_ThenErrorsWithPropertyEmail(string? email)
+    public void Validate_EmptyEmail_ReturnsErrorForEmail(string? email)
     {
         var request = new RegisterRequest(email!, "Password1");
 
@@ -44,7 +44,7 @@ public class RegisterRequestValidatorTest
     [InlineData("notanemail")]
     [InlineData("a@b")]
     [InlineData("@x.com")]
-    public void GivenInvalidEmailFormat_WhenValidated_ThenErrors(string email)
+    public void Validate_InvalidEmailFormat_ReturnsErrorForEmail(string email)
     {
         var request = new RegisterRequest(email, "Password1");
 
@@ -55,7 +55,7 @@ public class RegisterRequestValidatorTest
     }
 
     [Fact]
-    public void GivenEmailTooLong_WhenValidated_ThenErrors()
+    public void Validate_TooLongEmail_ReturnsErrorForEmail()
     {
         var longEmail = new string('a', 250) + "@x.com";
         var request = new RegisterRequest(longEmail, "Password1");
@@ -69,7 +69,7 @@ public class RegisterRequestValidatorTest
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void GivenEmptyPassword_WhenValidated_ThenErrorsWithPropertyPassword(string? password)
+    public void Validate_EmptyPassword_ReturnsErrorForPassword(string? password)
     {
         var request = new RegisterRequest("user@example.com", password!);
 
@@ -80,7 +80,7 @@ public class RegisterRequestValidatorTest
     }
 
     [Fact]
-    public void GivenPasswordTooShort_WhenValidated_ThenErrors()
+    public void Validate_ShortPassword_ReturnsErrorForPassword()
     {
         var request = new RegisterRequest("user@example.com", "Pass1");
 
@@ -91,7 +91,7 @@ public class RegisterRequestValidatorTest
     }
 
     [Fact]
-    public void GivenPasswordTooLong_WhenValidated_ThenErrors()
+    public void Validate_LongPassword_ReturnsErrorForPassword()
     {
         var longPassword = "A" + new string('a', 71) + "1";
         var request = new RegisterRequest("user@example.com", longPassword);
@@ -103,7 +103,7 @@ public class RegisterRequestValidatorTest
     }
 
     [Fact]
-    public void GivenPasswordMissingUppercase_WhenValidated_ThenErrors()
+    public void Validate_PasswordMissingUppercase_ReturnsErrorForPassword()
     {
         var request = new RegisterRequest("user@example.com", "abcdefg1");
 
@@ -114,7 +114,7 @@ public class RegisterRequestValidatorTest
     }
 
     [Fact]
-    public void GivenPasswordMissingLowercase_WhenValidated_ThenErrors()
+    public void Validate_PasswordMissingLowercase_ReturnsErrorForPassword()
     {
         var request = new RegisterRequest("user@example.com", "ABCDEFG1");
 
@@ -125,7 +125,7 @@ public class RegisterRequestValidatorTest
     }
 
     [Fact]
-    public void GivenPasswordMissingDigit_WhenValidated_ThenErrors()
+    public void Validate_PasswordMissingDigit_ReturnsErrorForPassword()
     {
         var request = new RegisterRequest("user@example.com", "Abcdefgh");
 

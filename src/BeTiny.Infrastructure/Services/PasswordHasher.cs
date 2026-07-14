@@ -12,12 +12,11 @@ public sealed class PasswordHasher : IPasswordHasher
     /// <inheritdoc/>
     public string HashPassword(string password)
     {
-        if (password is null)
-            throw new ArgumentNullException(nameof(password));
+        ArgumentNullException.ThrowIfNull(password);
 
         if (string.IsNullOrWhiteSpace(password))
             throw new ArgumentException("Password cannot be null or whitespace.", nameof(password));
 
-        return BCrypt.Net.BCrypt.HashPassword(password, WorkFactor);
+        return BCrypt.Net.BCrypt.EnhancedHashPassword(password, WorkFactor);
     }
 }

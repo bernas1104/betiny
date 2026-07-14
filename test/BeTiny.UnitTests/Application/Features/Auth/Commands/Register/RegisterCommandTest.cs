@@ -34,7 +34,7 @@ public class RegisterCommandTest
     }
 
     [Fact]
-    public async Task Handle_CreatesUserAndReturnsSuccess_WhenEmailUnique()
+    public async Task Handle_WhenEmailUnique_ReturnsSuccess()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
 
@@ -59,7 +59,7 @@ public class RegisterCommandTest
     }
 
     [Fact]
-    public async Task Handle_ReturnsConflictFailure_WhenEmailAlreadyExists()
+    public async Task Handle_WhenEmailAlreadyExists_ReturnsConflictFailure()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
         var existing = User.Create(
@@ -86,7 +86,7 @@ public class RegisterCommandTest
     }
 
     [Fact]
-    public async Task Handle_NormalizesEmailBeforePreCheck()
+    public async Task Handle_WhenEmailNotNormalized_ReturnsSuccess()
     {
         var request = new RegisterRequest("User@Example.COM", "Password1");
         Expression<Func<User, bool>>? capturedFilter = null;
@@ -108,7 +108,7 @@ public class RegisterCommandTest
     }
 
     [Fact]
-    public async Task Handle_ReturnsConflictFailure_AndDetaches_WhenAddAsyncThrowsDuplicateEmailException()
+    public async Task Handle_WhenAddAsyncThrowsDuplicateEmailException_ReturnsConflictFailureAndDetaches()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
 
@@ -130,7 +130,7 @@ public class RegisterCommandTest
     }
 
     [Fact]
-    public async Task Handle_PassesHashedPasswordToRepository()
+    public async Task Handle_WhenEmailUnique_ReturnsUserWithHashedPassword()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
 
@@ -148,7 +148,7 @@ public class RegisterCommandTest
     }
 
     [Fact]
-    public async Task Handle_ThrowsArgumentException_WhenEmailInvalidAndValidatorBypassed()
+    public async Task Handle_WhenEmailInvalidAndValidatorBypassed_ThrowsArgumentException()
     {
         var request = new RegisterRequest("notanemail", "Password1");
 

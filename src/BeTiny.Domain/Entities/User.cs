@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using BeTiny.Domain.Common.Entities;
 using BeTiny.Domain.Common.Interfaces;
@@ -10,7 +9,6 @@ namespace BeTiny.Domain.Entities;
 /// <summary>
 /// Represents a registered user of the system.
 /// </summary>
-[ExcludeFromCodeCoverage]
 public sealed partial class User : AggregateRoot<UserId, Guid>
 {
     /// <summary>
@@ -46,11 +44,9 @@ public sealed partial class User : AggregateRoot<UserId, Guid>
     /// <exception cref="ArgumentException">Thrown when <paramref name="password"/> is invalid.</exception>
     public static User Create(Email email, string password, IPasswordHasher passwordHasher)
     {
-        if (email is null)
-            throw new ArgumentNullException(nameof(email));
+        ArgumentNullException.ThrowIfNull(email);
 
-        if (passwordHasher is null)
-            throw new ArgumentNullException(nameof(passwordHasher));
+        ArgumentNullException.ThrowIfNull(passwordHasher);
 
         if (string.IsNullOrWhiteSpace(password))
             throw new ArgumentException("Password cannot be null or whitespace.", nameof(password));

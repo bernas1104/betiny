@@ -11,22 +11,11 @@ namespace BeTiny.Application.Common.Cqrs.Pipeline;
 /// </summary>
 /// <typeparam name="TRequest">The type of the request.</typeparam>
 /// <typeparam name="TResponse">The type of the response.</typeparam>
-public class ValidationBehavior<TRequest, TResponse>
+public class ValidationBehavior<TRequest, TResponse>(IServiceProvider serviceProvider)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
     where TResponse : IResult, new()
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ValidationBehavior{TRequest, TResponse}"/> class.
-    /// </summary>
-    /// <param name="serviceProvider">The service provider to resolve validators.</param>
-    public ValidationBehavior(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
     /// <summary>
     /// Handles the validation of a request before passing it to the next handler in the pipeline.
     /// </summary>
@@ -42,7 +31,7 @@ public class ValidationBehavior<TRequest, TResponse>
     {
         var requestType = request.GetType();
         var validatorType = typeof(IValidator<>).MakeGenericType(requestType);
-        var validator = _serviceProvider.GetService(validatorType) as IValidator;
+        var validator = serviceProvider.GetService(validatorType) as IValidator;
 
         if (validator != null)
         {

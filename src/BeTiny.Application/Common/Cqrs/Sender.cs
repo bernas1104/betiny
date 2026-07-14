@@ -5,56 +5,42 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BeTiny.Application.Common.Cqrs;
 
+/// <inheritdoc/>
+public class Sender(IServiceProvider serviceProvider) : ISender
+{
     /// <inheritdoc/>
-    public class Sender : ISender
+    public async Task<TResponse> Send<TResponse>(
+        IRequest<TResponse> request,
+        CancellationToken ct = default
+    )
     {
-        private readonly IServiceProvider _serviceProvider;
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var requestType = request.GetType();
+        var handlerType = typeof(IRequestHandler<,>)
+            .MakeGenericType(requestType, typeof(TResponse));
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Sender"/> class with
-        /// the specified service provider.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider to resolve dependencies.</param>
-        public Sender(IServiceProvider serviceProvider)
+        var requestHandler = scope.ServiceProvider
+            .GetRequiredService(handlerType);
+
+        var behaviorType = typeof(IPipelineBehavior<,>)
+            .MakeGenericType(requestType, typeof(TResponse));
+
+        var pipelineBehaviors = scope.ServiceProvider
+            .GetServices(behaviorType);
+
+        if (pipelineBehaviors.Any())
         {
-            _serviceProvider = serviceProvider;
+            var pipeline = pipelineBehaviors
+                .Reverse()
+                .Aggregate(
+                    (RequestHandlerDelegate<TResponse>)
+                        (ct => ((dynamic)requestHandler).Handle((dynamic)request, ct)),
+                    (next, behavior) => ct => ((dynamic)behavior!).Handle((dynamic)request, next, ct)
+                );
+
+            return await pipeline(ct);
         }
-
-        /// <inheritdoc/>
-        public async Task<TResponse> Send<TResponse>(
-            IRequest<TResponse> request,
-            CancellationToken ct = default
-        )
-        {
-            await using (var scope = _serviceProvider.CreateAsyncScope())
-            {
-                var requestType = request.GetType();
-                var handlerType = typeof(IRequestHandler<,>)
-                    .MakeGenericType(requestType, typeof(TResponse));
-
-                var requestHandler = scope.ServiceProvider
-                    .GetRequiredService(handlerType);
-
-                var behaviorType = typeof(IPipelineBehavior<,>)
-                    .MakeGenericType(requestType, typeof(TResponse));
-
-                var pipelineBehaviors = scope.ServiceProvider
-                    .GetServices(behaviorType);
-
-                if (pipelineBehaviors.Any())
-                {
-                    var pipeline = pipelineBehaviors
-                        .Reverse()
-                        .Aggregate(
-                            (RequestHandlerDelegate<TResponse>)
-                                (ct => ((dynamic)requestHandler).Handle((dynamic)request, ct)),
-                            (next, behavior) => ct => ((dynamic)behavior!).Handle((dynamic)request, next, ct)
-                        );
-
-                    return await pipeline(ct);
-                }
-                else
-                    return await ((dynamic)requestHandler).Handle((dynamic)request, ct);
-            }
-        }
+        else
+            return await ((dynamic)requestHandler).Handle((dynamic)request, ct);
     }
+}

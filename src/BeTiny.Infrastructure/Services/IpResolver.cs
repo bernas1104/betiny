@@ -6,22 +6,8 @@ namespace BeTiny.Infrastructure.Services;
 /// <summary>
 /// Resolves country from IP address using an external IP API.
 /// </summary>
-public sealed class IpResolver : IIpResolver
+public sealed class IpResolver(IIpApi ipApi, ILogger<IpResolver> logger) : IIpResolver
 {
-    private readonly IIpApi _ipApi;
-    private readonly ILogger<IpResolver> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="IpResolver"/> class.
-    /// </summary>
-    /// <param name="ipApi">The IP API instance.</param>
-    /// <param name="logger">The logger instance.</param>
-    public IpResolver(IIpApi ipApi, ILogger<IpResolver> logger)
-    {
-        _ipApi = ipApi;
-        _logger = logger;
-    }
-
     /// <inheritdoc/>
     public async Task<string> GetCountryByIpAsync(string? ipAddress)
     {
@@ -29,15 +15,15 @@ public sealed class IpResolver : IIpResolver
         {
             if (string.IsNullOrEmpty(ipAddress))
             {
-                _logger.LogInformation("No IP address provided. Returning 'Unknown'.");
+                logger.LogInformation("No IP address provided. Returning 'Unknown'.");
                 return "Unknown";
             }
 
-            var ipInfo = await _ipApi.GetIpInfoAsync(ipAddress);
+            var ipInfo = await ipApi.GetIpInfoAsync(ipAddress);
             
             if (!ipInfo.Success)
             {
-                _logger.LogInformation("Failed to resolve IP address. Returning 'Unknown'. Error: {Error}",
+                logger.LogInformation("Failed to resolve IP address. Returning 'Unknown'. Error: {Error}",
                     ipInfo.Message);
 
                 return "Unknown";
@@ -47,7 +33,7 @@ public sealed class IpResolver : IIpResolver
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error occurred while resolving IP address. Returning 'Unknown'.");
+            logger.LogWarning(ex, "Error occurred while resolving IP address. Returning 'Unknown'.");
             return "Unknown";
         }
     }

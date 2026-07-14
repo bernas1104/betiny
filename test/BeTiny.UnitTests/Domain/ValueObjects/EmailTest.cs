@@ -89,4 +89,15 @@ public class EmailTest
 
         isMatch.Should().Be(expected);
     }
+
+    [Theory]
+    [InlineData("user@example.com", "u***@example.com")]
+    [InlineData("a@x.com", "a***@x.com")]
+    [InlineData("john.doe@sub.domain.co.uk", "j***@sub.domain.co.uk")]
+    public void RedactedValue_MasksLocalPart(string input, string expected)
+    {
+        var email = Email.Create(input);
+
+        email.RedactedValue.Should().Be(expected);
+    }
 }

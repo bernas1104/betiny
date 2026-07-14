@@ -13,18 +13,9 @@ namespace BeTiny.Api.Controllers.v1;
 [ApiController]
 [Route("api/v1/[controller]")]
 [ExcludeFromCodeCoverage]
-public class UrlShortenerController : Controller
+public class UrlShortenerController(ISender sender, ILogger<UrlShortenerController> logger)
+    : Controller(logger)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UrlShortenerController"/> class.
-    /// </summary>
-    /// <param name="sender">The sender used to send commands and queries.</param>
-    /// <param name="logger">The logger used for logging.</param>
-    public UrlShortenerController(ISender sender, ILogger<UrlShortenerController> logger)
-        : base(sender, logger)
-    {
-    }
-
     /// <summary>
     /// Shortens a given URL.
     /// </summary>
@@ -37,7 +28,7 @@ public class UrlShortenerController : Controller
         CancellationToken cancellationToken
     )
     {
-        var result = await _sender.Send(request, cancellationToken);
+        var result = await sender.Send(request, cancellationToken);
         return HandleResult(
             result,
             () => Created(
@@ -69,7 +60,7 @@ public class UrlShortenerController : Controller
     {
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
         
-        var result = await _sender.Send(
+        var result = await sender.Send(
             new GetByShortUrlRequest(
                 shortUrl,
                 HttpContext.Request.Headers["User-Agent"].ToString(),

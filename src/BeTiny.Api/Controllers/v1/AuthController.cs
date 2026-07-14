@@ -11,18 +11,8 @@ namespace BeTiny.Api.Controllers.v1;
 [ApiController]
 [Route("api/v1/auth")]
 [ExcludeFromCodeCoverage]
-public class AuthController : Controller
+public class AuthController(ISender sender, ILogger<AuthController> logger) : Controller(logger)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthController"/> class.
-    /// </summary>
-    /// <param name="sender">The sender used to send commands and queries.</param>
-    /// <param name="logger">The logger used for logging.</param>
-    public AuthController(ISender sender, ILogger<AuthController> logger)
-        : base(sender, logger)
-    {
-    }
-
     /// <summary>
     /// Registers a new user.
     /// </summary>
@@ -35,7 +25,7 @@ public class AuthController : Controller
         CancellationToken cancellationToken
     )
     {
-        var result = await _sender.Send(request, cancellationToken);
+        var result = await sender.Send(request, cancellationToken);
 
         return HandleResult(
             result,

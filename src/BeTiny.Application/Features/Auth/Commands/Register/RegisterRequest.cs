@@ -28,7 +28,7 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
     {
         RuleFor(x => x.Email)
             .NotEmpty()
-            .MaximumLength(254)
+            .Must(email => (email ?? string.Empty).Trim().Length <= 254)
             .Must(email => Email.EmailRegex().IsMatch((email ?? string.Empty).Trim()))
             .WithMessage("The Email must be a valid email address.");
 

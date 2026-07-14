@@ -13,6 +13,22 @@ public sealed partial class Email : ValueObject
     /// </summary>
     public string Value { get; }
 
+    /// <summary>
+    /// Gets a redacted representation of the email suitable for logging.
+    /// </summary>
+    public string RedactedValue
+    {
+        get
+        {
+            var atIndex = Value.IndexOf('@');
+            if (atIndex <= 0)
+                return "***";
+
+            var domain = Value[(atIndex + 1)..];
+            return Value[0] + "***@" + domain;
+        }
+    }
+
     private Email(string value)
     {
         Value = value;
@@ -27,8 +43,7 @@ public sealed partial class Email : ValueObject
     /// <exception cref="ArgumentException">Thrown when <paramref name="email"/> is empty, whitespace, invalid, or too long.</exception>
     public static Email Create(string email)
     {
-        if (email is null)
-            throw new ArgumentNullException(nameof(email));
+        ArgumentNullException.ThrowIfNull(email);
 
         var normalized = email.Trim().ToLowerInvariant();
 

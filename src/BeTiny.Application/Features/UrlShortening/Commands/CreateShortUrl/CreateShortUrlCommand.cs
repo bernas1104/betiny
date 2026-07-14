@@ -16,39 +16,15 @@ namespace BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 /// <summary>
 /// Handles the creation of a short URL.
 /// </summary>
-public class CreateShortUrlCommand : 
-    IRequestHandler<CreateShortUrlRequest, Result<CreateShortUrlResponse>>
+public class CreateShortUrlCommand(
+    IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
+    IShortCodeGenerator shortCodeGenerator,
+    IDateTimeProvider dateTimeProvider,
+    IReservedAliasPolicy reservedAliasPolicy,
+    ILogger<CreateShortUrlCommand> logger
+) : IRequestHandler<CreateShortUrlRequest, Result<CreateShortUrlResponse>>
 {
-    private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
-    private readonly IShortCodeGenerator _shortCodeGenerator;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IReservedAliasPolicy _reservedAliasPolicy;
-    private readonly ILogger<CreateShortUrlCommand> _logger;
-
     public const int MaxShortCodeGenerationAttempts = 10;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CreateShortUrlCommand"/> class.
-    /// </summary>
-    /// <param name="shortUrlRepository">The short URL repository.</param>
-    /// <param name="shortCodeGenerator">The short code generator.</param>
-    /// <param name="dateTimeProvider">The date and time provider.</param>
-    /// <param name="reservedAliasPolicy">The reserved alias policy.</param>
-    /// <param name="logger">The logger.</param>
-    public CreateShortUrlCommand(
-        IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
-        IShortCodeGenerator shortCodeGenerator,
-        IDateTimeProvider dateTimeProvider,
-        IReservedAliasPolicy reservedAliasPolicy,
-        ILogger<CreateShortUrlCommand> logger
-    )
-    {
-        _shortUrlRepository = shortUrlRepository;
-        _shortCodeGenerator = shortCodeGenerator;
-        _dateTimeProvider = dateTimeProvider;
-        _reservedAliasPolicy = reservedAliasPolicy;
-        _logger = logger;
-    }
 
     /// <summary>
     /// Handles the creation of a short URL.
@@ -68,7 +44,7 @@ public class CreateShortUrlCommand :
         if (!result.IsSuccess)
             return Result<CreateShortUrlResponse>.Failure([..result.Errors]);
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Short URL for {OriginalUrl} created: {AliasUrl}",
             command.OriginalUrl,
             result.Value!.AliasUrl
@@ -91,13 +67,13 @@ public class CreateShortUrlCommand :
                 command.OriginalUrl,
                 command.CustomAlias!,
                 command.ExpiresAt,
-                _dateTimeProvider,
-                _reservedAliasPolicy
+                dateTimeProvider,
+                reservedAliasPolicy
             );
         }
         catch (ReservedAliasException ex)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 ex,
                 "Failed to create short URL for {OriginalUrl}. The custom alias '{CustomAlias}' is reserved.",
                 command.OriginalUrl,
@@ -119,11 +95,11 @@ public class CreateShortUrlCommand :
     {
         for (int attempts = 0; attempts < MaxShortCodeGenerationAttempts; attempts++)
         {
-            var shortCode = await _shortCodeGenerator.GenerateShortCode();
+            var shortCode = await shortCodeGenerator.GenerateShortCode();
 
-            if (_reservedAliasPolicy.IsReserved(shortCode))
+            if (reservedAliasPolicy.IsReserved(shortCode))
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "Generated short code '{ShortCode}' is reserved. Retrying...",
                     shortCode
                 );
@@ -135,8 +111,8 @@ public class CreateShortUrlCommand :
                 command.OriginalUrl,
                 shortCode,
                 command.ExpiresAt,
-                _dateTimeProvider,
-                _reservedAliasPolicy
+                dateTimeProvider,
+                reservedAliasPolicy
             );
 
             if (await TryAddShortUrlAsync(shortUrl, cancellationToken))
@@ -150,14 +126,14 @@ public class CreateShortUrlCommand :
     {
         try
         {   
-            await _shortUrlRepository.AddAsync(shortUrl, cancellationToken);
+            await shortUrlRepository.AddAsync(shortUrl, cancellationToken);
             return true;
         }
         catch (DuplicateAliasUrlException ex)
         {
-            _shortUrlRepository.Detach(shortUrl);
+            shortUrlRepository.Detach(shortUrl);
             
-            _logger.LogWarning(
+            logger.LogWarning(
                 ex,
                 "Failed to create short URL for {OriginalUrl}. A shortened URL with the same value already exists.",
                 shortUrl.OriginalUrl
@@ -165,7 +141,7 @@ public class CreateShortUrlCommand :
 
             if (shortUrl.Type == AliasUrlType.ShortCode)
             {
-                _logger.LogInformation(
+                logger.LogInformation(
                     "Retrying short URL creation for {OriginalUrl} with a new short code.",
                     shortUrl.OriginalUrl
                 );

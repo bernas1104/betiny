@@ -13,29 +13,12 @@ namespace BeTiny.Application.Features.Auth.Commands.Register;
 /// <summary>
 /// Handles the registration of a new user.
 /// </summary>
-public class RegisterCommand : IRequestHandler<RegisterRequest, Result<RegisterResponse>>
+public class RegisterCommand(
+    IRepository<User, UserId, Guid> userRepository,
+    IPasswordHasher passwordHasher,
+    ILogger<RegisterCommand> logger
+) : IRequestHandler<RegisterRequest, Result<RegisterResponse>>
 {
-    private readonly IRepository<User, UserId, Guid> _userRepository;
-    private readonly IPasswordHasher _passwordHasher;
-    private readonly ILogger<RegisterCommand> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RegisterCommand"/> class.
-    /// </summary>
-    /// <param name="userRepository">The user repository.</param>
-    /// <param name="passwordHasher">The password hasher.</param>
-    /// <param name="logger">The logger.</param>
-    public RegisterCommand(
-        IRepository<User, UserId, Guid> userRepository,
-        IPasswordHasher passwordHasher,
-        ILogger<RegisterCommand> logger
-    )
-    {
-        _userRepository = userRepository;
-        _passwordHasher = passwordHasher;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Handles the registration request.
     /// </summary>
@@ -49,35 +32,35 @@ public class RegisterCommand : IRequestHandler<RegisterRequest, Result<RegisterR
     {
         var email = Email.Create(request.Email);
 
-        var existing = await _userRepository.GetByFilterAsync(
+        var existing = await userRepository.GetByFilterAsync(
             u => u.Email == email,
             cancellationToken
         );
 
         if (existing is not null)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Registration failed for {Email}. The email is already registered.",
-                email.Value
+                email.RedactedValue
             );
 
             return Result<RegisterResponse>.Failure(CreateDuplicateEmailError());
         }
 
-        var user = User.Create(email, request.Password, _passwordHasher);
+        var user = User.Create(email, request.Password, passwordHasher);
 
         try
         {
-            await _userRepository.AddAsync(user, cancellationToken);
+            await userRepository.AddAsync(user, cancellationToken);
         }
         catch (DuplicateEmailException ex)
         {
-            _userRepository.Detach(user);
+            userRepository.Detach(user);
 
-            _logger.LogWarning(
+            logger.LogWarning(
                 ex,
                 "Registration failed for {Email} due to a concurrent registration.",
-                email.Value
+                email.RedactedValue
             );
 
             return Result<RegisterResponse>.Failure(CreateDuplicateEmailError());

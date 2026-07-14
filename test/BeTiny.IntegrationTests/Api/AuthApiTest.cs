@@ -1,6 +1,5 @@
 using System.Net;
-using System.Text;
-using System.Text.Json;
+using System.Net.Http.Json;
 using BeTiny.Application.Features.Auth.Commands.Register;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
@@ -28,24 +27,15 @@ public class AuthApiTest : BaseIntegrationTest, IClassFixture<IntegrationTestFix
     }
 
     [Fact]
-    public async Task Register_ReturnsCreated_WhenValidInput()
+    public async Task Register_ValidInput_ReturnsCreatedAsync()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
-        var json = JsonSerializer.Serialize(request);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        var response = await Client.PostAsync("/api/v1/auth/register", content);
+        
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/register", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<RegisterResponse>(
-            responseBody,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }
-        );
+        var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
 
         result.Should().NotBeNull();
         result!.Id.Should().NotBeEmpty();
@@ -53,116 +43,75 @@ public class AuthApiTest : BaseIntegrationTest, IClassFixture<IntegrationTestFix
     }
 
     [Fact]
-    public async Task Register_ReturnsBadRequest_WhenEmailInvalid()
+    public async Task Register_EmailInvalid_ReturnsBadRequestAsync()
     {
         var request = new RegisterRequest("notanemail", "Password1");
-        var json = JsonSerializer.Serialize(request);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        var response = await Client.PostAsync("/api/v1/auth/register", content);
+        
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/register", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<ProblemDetails>(
-            responseBody,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }
-        );
+        var result = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("ValidationError");
     }
 
     [Fact]
-    public async Task Register_ReturnsBadRequest_WhenPasswordWeak()
+    public async Task Register_PasswordWeak_ReturnsBadRequestAsync()
     {
         var request = new RegisterRequest("user@example.com", "short");
-        var json = JsonSerializer.Serialize(request);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        var response = await Client.PostAsync("/api/v1/auth/register", content);
+        
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/register", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<ProblemDetails>(
-            responseBody,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }
-        );
+        var result = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("ValidationError");
     }
 
     [Fact]
-    public async Task Register_ReturnsConflict_WhenEmailDuplicate()
+    public async Task Register_EmailDuplicate_ReturnsConflictAsync()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
-        var json = JsonSerializer.Serialize(request);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        await Client.PostAsync("/api/v1/auth/register", content);
+        await Client.PostAsJsonAsync("/api/v1/auth/register", request);
 
         var duplicateRequest = new RegisterRequest("user@example.com", "Password1");
-        json = JsonSerializer.Serialize(duplicateRequest);
-        content = new StringContent(json, Encoding.UTF8, "application/json");
-        var response = await Client.PostAsync("/api/v1/auth/register", content);
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/register", duplicateRequest);
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<ProblemDetails>(
-            responseBody,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }
-        );
+        var result = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("ConflictError");
     }
 
     [Fact]
-    public async Task Register_NormalizesEmailBeforeUniqueness()
+    public async Task Register_EmailsDifferByCase_ReturnsConflictAsync()
     {
         var firstRequest = new RegisterRequest("User@Example.COM", "Password1");
-        var json = JsonSerializer.Serialize(firstRequest);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        await Client.PostAsync("/api/v1/auth/register", content);
+        await Client.PostAsJsonAsync("/api/v1/auth/register", firstRequest);
 
         var secondRequest = new RegisterRequest("user@example.com", "Password1");
-        json = JsonSerializer.Serialize(secondRequest);
-        content = new StringContent(json, Encoding.UTF8, "application/json");
-        var response = await Client.PostAsync("/api/v1/auth/register", content);
+
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/register", secondRequest);
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<ProblemDetails>(
-            responseBody,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            }
-        );
+        var result = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("ConflictError");
     }
 
     [Fact]
-    public async Task Register_PersistsHashedPassword_NotPlaintext()
+    public async Task Register_ValidInput_PersistsHashedPasswordAsync()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
-        var json = JsonSerializer.Serialize(request);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        await Client.PostAsync("/api/v1/auth/register", content);
+        await Client.PostAsJsonAsync("/api/v1/auth/register", request);
 
         using var scope = Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<BeTinyContext>();
