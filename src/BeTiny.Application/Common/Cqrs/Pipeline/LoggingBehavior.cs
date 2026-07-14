@@ -10,21 +10,10 @@ namespace BeTiny.Application.Common.Cqrs.Pipeline;
 /// </summary>
 /// <typeparam name="TRequest">The type of the request.</typeparam>
 /// <typeparam name="TResponse">The type of the response.</typeparam>
-public sealed class LoggingBehavior<TRequest, TResponse>
+public sealed class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly ILogger<LoggingBehavior<TRequest, TResponse>> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LoggingBehavior{TRequest, TResponse}"/> class.
-    /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public LoggingBehavior(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
-    {
-        _logger = logger;
-    }
-
     /// <summary>
     /// Handles the logging of a request and its response.
     /// </summary>
@@ -50,7 +39,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>
 
     private void LogRequestStart()
     {
-        _logger.LogInformation(
+        logger.LogInformation(
             "Starting to handle {RequestType}.",
             typeof(TRequest).Name
         );
@@ -60,7 +49,7 @@ public sealed class LoggingBehavior<TRequest, TResponse>
     {
         stopwatch.Stop();
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Handled {RequestType} in {ElapsedMilliseconds} ms.",
             typeof(TRequest).Name,
             stopwatch.ElapsedMilliseconds

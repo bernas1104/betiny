@@ -14,34 +14,13 @@ namespace BeTiny.Application.Features.UrlShortening.Queries.GetByShortUrl;
 /// <summary>
 /// Query to get a URL by its short URL.
 /// </summary>
-public class GetByShortUrlQuery
-    : IRequestHandler<GetByShortUrlRequest, Result<GetByShortUrlResponse>>
+public class GetByShortUrlQuery(
+    IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
+    IDateTimeProvider dateTimeProvider,
+    IPublisher publisher,
+    ILogger<GetByShortUrlQuery> logger
+) : IRequestHandler<GetByShortUrlRequest, Result<GetByShortUrlResponse>>
 {
-    private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IPublisher _publisher;
-    private readonly ILogger<GetByShortUrlQuery> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GetByShortUrlQuery"/> class.
-    /// </summary>
-    /// <param name="shortUrlRepository">The repository for URL shortening.</param>
-    /// <param name="dateTimeProvider">The provider for date and time.</param>
-    /// <param name="publisher">The publisher for notifications.</param>
-    /// <param name="logger">The logger instance.</param>
-    public GetByShortUrlQuery(
-        IRepository<ShortUrl, ShortUrlId, Guid> shortUrlRepository,
-        IDateTimeProvider dateTimeProvider,
-        IPublisher publisher,
-        ILogger<GetByShortUrlQuery> logger
-    )
-    {
-        _shortUrlRepository = shortUrlRepository;
-        _dateTimeProvider = dateTimeProvider;
-        _publisher = publisher;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Handles the query to get a URL by its short URL.
     /// </summary>
@@ -53,14 +32,14 @@ public class GetByShortUrlQuery
         CancellationToken cancellationToken
     )
     {
-        var shortUrl = await _shortUrlRepository.GetByFilterAsync(
+        var shortUrl = await shortUrlRepository.GetByFilterAsync(
             x => x.AliasUrl == request.ShortUrl,
             cancellationToken
         );
 
-        if (shortUrl is null || shortUrl.IsExpired(_dateTimeProvider))
+        if (shortUrl is null || shortUrl.IsExpired(dateTimeProvider))
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Short URL '{ShortUrl}' not found or expired.",
                 request.ShortUrl
             );
@@ -77,7 +56,7 @@ public class GetByShortUrlQuery
 
         await PublishClickEventAsync(notification, cancellationToken);
 
-        _logger.LogInformation(
+        logger.LogInformation(
             "Short URL '{ShortUrl}' accessed successfully. Redirecting user to original URL.",
             request.ShortUrl
         );
@@ -117,11 +96,11 @@ public class GetByShortUrlQuery
     {
         try
         {
-            await _publisher.Publish(notification, cancellationToken);
+            await publisher.Publish(notification, cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 ex,
                 "Click event tracking failed for short URL '{ShortUrl}'. Redirect proceeding.",
                 notification.ShortUrl.AliasUrl

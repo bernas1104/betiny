@@ -10,34 +10,13 @@ namespace BeTiny.Application.Events.ClickEvents.Create;
 /// <summary>
 /// Handles the creation of a click event notification.
 /// </summary>
-public class CreateClickEventNotificationHandler
-    : INotificationHandler<CreateClickEventNotification>
+public class CreateClickEventNotificationHandler(
+    IRepository<ClickEvent, ClickEventId, Guid> repository,
+    IIpResolver ipResolver,
+    IDeviceDetector deviceDetector,
+    ILogger<CreateClickEventNotificationHandler> logger
+) : INotificationHandler<CreateClickEventNotification>
 {
-    private readonly IRepository<ClickEvent, ClickEventId, Guid> _repository;
-    private readonly IIpResolver _ipResolver;
-    private readonly IDeviceDetector _deviceDetector;
-    private readonly ILogger<CreateClickEventNotificationHandler> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CreateClickEventNotificationHandler"/> class.
-    /// </summary>
-    /// <param name="repository">The repository for click events.</param>
-    /// <param name="ipResolver">The IP resolver service.</param>
-    /// <param name="deviceDetector">The device detector service.</param>
-    /// <param name="logger">The logger instance.</param>
-    public CreateClickEventNotificationHandler(
-        IRepository<ClickEvent, ClickEventId, Guid> repository,
-        IIpResolver ipResolver,
-        IDeviceDetector deviceDetector,
-        ILogger<CreateClickEventNotificationHandler> logger
-    )
-    {
-        _repository = repository;
-        _ipResolver = ipResolver;
-        _deviceDetector = deviceDetector;
-        _logger = logger;
-    }
-
     /// <summary>
     /// Handles the specified click event notification.
     /// </summary>
@@ -49,10 +28,10 @@ public class CreateClickEventNotificationHandler
         CancellationToken ct = default
     )
     {
-        var country = await _ipResolver.GetCountryByIpAsync(notification.IpAddress);
+        var country = await ipResolver.GetCountryByIpAsync(notification.IpAddress);
         if (country == "Unknown")
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Could not resolve country of origin for click event of ShortUrl {ShortUrlId}. "
                     + "Defaulting to 'Unknown'.",
                 notification.ShortUrl.Id
@@ -63,16 +42,16 @@ public class CreateClickEventNotificationHandler
 
         try
         {
-            await _repository.AddAsync(clickEvent, ct);
+            await repository.AddAsync(clickEvent, ct);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Successfully created click event with ID {ClickEventId}.",
                 clickEvent.Id
             );
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            logger.LogError(
                 ex,
                 "Failed to create click event for ShortUrl {ShortUrlId}.",
                 notification.ShortUrl.Id
@@ -92,6 +71,6 @@ public class CreateClickEventNotificationHandler
             country,
             notification.UserAgent,
             notification.Referer,
-            _deviceDetector.DetectDeviceType(notification.UserAgent)
+            deviceDetector.DetectDeviceType(notification.UserAgent)
         );
 }

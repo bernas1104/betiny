@@ -48,6 +48,7 @@ public static class ConfigureServices
         services.AddScoped<IDeviceDetector, DeviceDetector>();
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IReservedAliasPolicy, ReservedAliasPolicy>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
         
         return services;
     }

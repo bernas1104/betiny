@@ -10,6 +10,7 @@ A URL shortener built as a system design exercise using **.NET 10** with Clean A
 - Duplicate short URLs (including custom aliases) return **HTTP 409 Conflict**; auto-generated short codes are retried on collision.
 - **Reserved aliases** (e.g. `admin`, `login`, `api`) are blocked from use as custom aliases and from auto-generated short codes; the built-in defaults can be extended via `appsettings.json`. Reserved custom aliases return **HTTP 400 Bad Request**.
 - Click event tracking runs as **fire-and-forget** on redirect — captures device type, IP address/country, User-Agent, and referer; redirects proceed even if tracking fails.
+- **User registration** (`POST /api/v1/auth/register`) with email validation, password rules, and duplicate-email prevention; passwords are hashed with BCrypt before storage.
 
 ## Architecture
 

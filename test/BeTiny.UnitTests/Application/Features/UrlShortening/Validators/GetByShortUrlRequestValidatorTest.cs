@@ -7,7 +7,7 @@ public class GetByShortUrlRequestValidatorTest
     private readonly GetByShortUrlRequestValidator _validator = new ();
 
     [Fact]
-    public void GivenValidShortUrl_WhenValidated_ThenNoErrors()
+    public void Validate_ValidShortUrl_ReturnsSuccess()
     {
         var request = new GetByShortUrlRequest(
             "abcdefg",
@@ -29,7 +29,7 @@ public class GetByShortUrlRequestValidatorTest
 
     [Theory]
     [MemberData(nameof(InvalidCustomAliasData))]
-    public void GivenInvalidShortUrl_WhenValidated_TheErrors(string shortUrl)
+    public void Validate_InvalidShortUrl_ReturnsErrorForShortUrl(string shortUrl)
     {
         var request = new GetByShortUrlRequest(
             shortUrl,

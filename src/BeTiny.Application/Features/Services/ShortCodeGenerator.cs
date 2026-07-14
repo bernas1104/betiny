@@ -7,11 +7,9 @@ namespace BeTiny.Application.Features.Services;
 /// <summary>
 /// Generates short codes for URL shortening using base-62 encoding with an incrementing hash seed.
 /// </summary>
-public class ShortCodeGenerator : IShortCodeGenerator
+public class ShortCodeGenerator(IKVStore kVStore) : IShortCodeGenerator
 {
     private const string Base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-    private readonly IKVStore _kVStore;
 
     #if DEBUG
     [ExcludeFromCodeCoverage]
@@ -29,15 +27,6 @@ public class ShortCodeGenerator : IShortCodeGenerator
     #endif
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ShortCodeGenerator"/> class.
-    /// </summary>
-    /// <param name="kVStore">The key-value store used to retrieve hash seeds.</param>
-    public ShortCodeGenerator(IKVStore kVStore)
-    {
-        _kVStore = kVStore;
-    }
-
-    /// <summary>
     /// Generates a unique short code by retrieving the next hash seed from the key-value store
     /// and encoding it as a base-62 string.
     /// </summary>
@@ -50,7 +39,7 @@ public class ShortCodeGenerator : IShortCodeGenerator
     {
         ct.ThrowIfCancellationRequested();
 
-        var hashSeed = await _kVStore.GetNextHashSeed();
+        var hashSeed = await kVStore.GetNextHashSeed();
 
         if (hashSeed < 0)
             throw new InvalidOperationException(

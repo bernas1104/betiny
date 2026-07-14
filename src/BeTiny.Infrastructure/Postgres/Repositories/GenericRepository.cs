@@ -15,21 +15,10 @@ namespace BeTiny.Infrastructure.Postgres.Repositories;
 /// <typeparam name="TEntity">The entity type.</typeparam>
 /// <typeparam name="TId">The aggregate root ID type.</typeparam>
 /// <typeparam name="TIdType">The underlying ID value type.</typeparam>
-public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId, TIdType>
+public class GenericRepository<TEntity, TId, TIdType>(BeTinyContext context) : IRepository<TEntity, TId, TIdType>
     where TEntity : AggregateRoot<TId, TIdType>
     where TId : AggregateRootId<TIdType>
 {
-    private readonly BeTinyContext _context;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GenericRepository{TEntity, TId, TIdType}"/> class.
-    /// </summary>
-    /// <param name="context">The database context.</param>
-    public GenericRepository(BeTinyContext context)
-    {
-        _context = context;
-    }
-
     /// <inheritdoc/>
     public async Task AddAsync(TEntity entity, CancellationToken ct = default)
     {
@@ -37,7 +26,7 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
 
         try
         {
-            await _context.Set<TEntity>()
+            await context.Set<TEntity>()
                 .AddAsync(entity, ct);
 
             await SaveChanges(ct);
@@ -45,9 +34,16 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
         catch (DbUpdateException ex)
             when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") // Unique violation
         {
+            Detach(entity);
+
             if (IsUniqueConstraintViolation(pgEx, "IX_ShortUrls_AliasUrl"))
                 throw new DuplicateAliasUrlException(
                     $"A shortened URL already exists for the provided value."
+                );
+
+            if (IsUniqueConstraintViolation(pgEx, "IX_Users_Email"))
+                throw new DuplicateEmailException(
+                    "The email is already registered."
                 );
 
             throw;
@@ -65,7 +61,7 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
     {
         ct.ThrowIfCancellationRequested();
 
-        return _context.Set<TEntity>()
+        return context.Set<TEntity>()
             .FirstOrDefaultAsync(filter, ct);
     }
 
@@ -79,14 +75,13 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
     {
         ct.ThrowIfCancellationRequested();
 
-        return _context.Set<TEntity>()
+        return context.Set<TEntity>()
             .AnyAsync(filter, ct);
     }
-
-    /// <inheritdoc/>
-    public void Detach(TEntity entity)
+    
+    private void Detach(TEntity entity)
     {
-        var entry = _context.Entry(entity);
+        var entry = context.Entry(entity);
         if (entry.State != EntityState.Detached)
         {
             entry.State = EntityState.Detached;
@@ -95,6 +90,6 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
 
     private Task<int> SaveChanges(CancellationToken ct = default)
     {
-        return _context.SaveChangesAsync(ct);
+        return context.SaveChangesAsync(ct);
     }
 }
