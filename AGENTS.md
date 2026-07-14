@@ -223,6 +223,8 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 
 After a technical refinement is completed, upload it to the respective Github Issue. It should be appended to the issues' description, not added as a issue comment.
 
+Also, save the file to the @.plans/ folder as a .md file with the following format: `technical-refinement-issue-<issue-number>.md`. If in doubt, read the folder for examples.
+
 ## Updates
 
 After any changes to the project, update, if necessary, the `README.md` and `AGENTS.md` files.
