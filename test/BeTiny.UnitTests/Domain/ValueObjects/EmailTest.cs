@@ -5,7 +5,7 @@ namespace BeTiny.UnitTests.Domain.ValueObjects;
 public class EmailTest
 {
     [Fact]
-    public void Create_NormalizesToLowercaseAndTrims()
+    public void Create_WithWhitespaceAndMixedCase_ReturnsNormalizedValue()
     {
         var email = Email.Create("  Foo@Example.COM  ");
 
@@ -59,7 +59,7 @@ public class EmailTest
     }
 
     [Fact]
-    public void Create_Succeeds_ForValidEmail()
+    public void Create_WithValidEmail_ReturnsSameValue()
     {
         var email = Email.Create("user@example.com");
 
@@ -67,7 +67,7 @@ public class EmailTest
     }
 
     [Fact]
-    public void Equality_IsCaseInsensitiveBecauseNormalized()
+    public void Equals_WithDifferentCasing_ReturnsTrue()
     {
         var first = Email.Create("A@X.com");
         var second = Email.Create("a@x.com");
@@ -82,7 +82,7 @@ public class EmailTest
     [InlineData("a@b", false)]
     [InlineData("@x.com", false)]
     [InlineData("a b@c.com", false)]
-    public void EmailRegex_MatchesValid_RejectsInvalid(string input, bool expected)
+    public void EmailRegex_WithMixedInputs_ReturnsExpectedResult(string input, bool expected)
     {
         var normalized = input.Trim().ToLowerInvariant();
         var isMatch = Email.EmailRegex().IsMatch(normalized);
@@ -94,7 +94,7 @@ public class EmailTest
     [InlineData("user@example.com", "u***@example.com")]
     [InlineData("a@x.com", "a***@x.com")]
     [InlineData("john.doe@sub.domain.co.uk", "j***@sub.domain.co.uk")]
-    public void RedactedValue_MasksLocalPart(string input, string expected)
+    public void RedactedValue_WhenCalled_ReturnsMaskedLocalPart(string input, string expected)
     {
         var email = Email.Create(input);
 
