@@ -50,6 +50,11 @@ public class GenericRepository<TEntity, TId, TIdType> : IRepository<TEntity, TId
                     $"A shortened URL already exists for the provided value."
                 );
 
+            if (IsUniqueConstraintViolation(pgEx, "IX_Users_Email"))
+                throw new DuplicateEmailException(
+                    "The email is already registered."
+                );
+
             throw;
         }
     }

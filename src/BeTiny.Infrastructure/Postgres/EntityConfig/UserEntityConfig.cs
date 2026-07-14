@@ -23,9 +23,16 @@ public class UserEntityConfig : IEntityTypeConfiguration<User>
             );
 
         builder.Property(x => x.Email)
-            .HasMaxLength(100)
+            .HasConversion(
+                e => e.Value,
+                v => Email.Create(v)
+            )
+            .HasMaxLength(254)
             .HasColumnName("Email")
             .IsRequired();
+
+        builder.HasIndex(x => x.Email)
+            .IsUnique();
 
         builder.Property(x => x.PasswordHash)
             .HasMaxLength(255)
