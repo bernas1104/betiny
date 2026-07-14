@@ -130,9 +130,7 @@ public class CreateShortUrlCommand(
             return true;
         }
         catch (DuplicateAliasUrlException ex)
-        {
-            shortUrlRepository.Detach(shortUrl);
-            
+        {   
             logger.LogWarning(
                 ex,
                 "Failed to create short URL for {OriginalUrl}. A shortened URL with the same value already exists.",

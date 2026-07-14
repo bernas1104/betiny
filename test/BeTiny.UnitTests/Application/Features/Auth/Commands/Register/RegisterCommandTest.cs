@@ -108,7 +108,7 @@ public class RegisterCommandTest
     }
 
     [Fact]
-    public async Task Handle_WhenAddAsyncThrowsDuplicateEmailException_ReturnsConflictFailureAndDetaches()
+    public async Task Handle_WhenAddAsyncThrowsDuplicateEmailException_ReturnsConflictFailure()
     {
         var request = new RegisterRequest("user@example.com", "Password1");
 
@@ -125,8 +125,6 @@ public class RegisterCommandTest
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().ContainSingle(e =>
             e.ErrorType == ErrorTypes.ConflictError && e.PropertyName == "Email");
-
-        _userRepository.Received(1).Detach(Arg.Any<User>());
     }
 
     [Fact]

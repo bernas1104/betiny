@@ -34,6 +34,8 @@ public class GenericRepository<TEntity, TId, TIdType>(BeTinyContext context) : I
         catch (DbUpdateException ex)
             when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505") // Unique violation
         {
+            Detach(entity);
+
             if (IsUniqueConstraintViolation(pgEx, "IX_ShortUrls_AliasUrl"))
                 throw new DuplicateAliasUrlException(
                     $"A shortened URL already exists for the provided value."
@@ -76,9 +78,8 @@ public class GenericRepository<TEntity, TId, TIdType>(BeTinyContext context) : I
         return context.Set<TEntity>()
             .AnyAsync(filter, ct);
     }
-
-    /// <inheritdoc/>
-    public void Detach(TEntity entity)
+    
+    private void Detach(TEntity entity)
     {
         var entry = context.Entry(entity);
         if (entry.State != EntityState.Detached)

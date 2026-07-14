@@ -105,8 +105,6 @@ public class CreateShortUrlCommandTest
                 Arg.Any<CancellationToken>()
             );
 
-        _shortUrlRepository.Received(1).Detach(Arg.Any<ShortUrl>());
-
         _logger.ReceivedCalls()
             .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
             .Should()
@@ -199,9 +197,6 @@ public class CreateShortUrlCommandTest
                 ),
                 Arg.Any<CancellationToken>()
             );
-
-        _shortUrlRepository.Received(CreateShortUrlCommand.MaxShortCodeGenerationAttempts)
-            .Detach(Arg.Any<ShortUrl>());
 
         _logger.ReceivedCalls()
             .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)

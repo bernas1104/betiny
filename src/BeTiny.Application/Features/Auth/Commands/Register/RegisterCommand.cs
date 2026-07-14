@@ -55,8 +55,6 @@ public class RegisterCommand(
         }
         catch (DuplicateEmailException ex)
         {
-            userRepository.Detach(user);
-
             logger.LogWarning(
                 ex,
                 "Registration failed for {Email} due to a concurrent registration.",
