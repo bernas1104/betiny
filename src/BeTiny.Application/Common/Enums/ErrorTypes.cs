@@ -9,4 +9,6 @@ public enum ErrorTypes
     NotFoundError,
     ExpiredError,
     ConflictError,
+    UnauthorizedError,
+    ForbiddenError,
 }

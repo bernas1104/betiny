@@ -54,8 +54,8 @@ public sealed class TokenProviderTest
     public void IssueToken_ThrowsArgumentNullException_WhenUserIdIsNull()
     {
         // Arrange
-        UserId nullUserId = null!;
-        var email = Email.Create("test@example.com");
+        string nullUserId = null!;
+        string email = "test@example.com";
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => _tokenProvider.IssueToken(nullUserId, email));
@@ -65,8 +65,8 @@ public sealed class TokenProviderTest
     public void IssueToken_ThrowsArgumentNullException_WhenEmailIsNull()
     {
         // Arrange
-        var userId = UserId.Create(Guid.NewGuid());
-        Email nullEmail = null!;
+        string userId = Guid.NewGuid().ToString();
+        string nullEmail = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => _tokenProvider.IssueToken(userId, nullEmail));
@@ -76,8 +76,8 @@ public sealed class TokenProviderTest
     public void IssueToken_ReturnsTokenResult_WithValidTokenAndExpiration()
     {
         // Arrange
-        var userId = UserId.Create(Guid.NewGuid());
-        var email = Email.Create("test@example.com");
+        string userId = Guid.NewGuid().ToString();
+        string email = "test@example.com";
 
         var now = DateTime.UtcNow;
 

@@ -5,7 +5,6 @@ using BeTiny.Application.Common.Interfaces.Services;
 using BeTiny.Application.Common.Models;
 using BeTiny.Application.Common.Options;
 using BeTiny.Domain.Interfaces;
-using BeTiny.Domain.ValueObjects;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -28,7 +27,7 @@ public sealed class TokenProvider
     }
 
     /// <inheritdoc/>
-    public TokenResult IssueToken(UserId userId, Email email)
+    public TokenResult IssueToken(string userId, string email)
     {
         ArgumentNullException.ThrowIfNull(userId, nameof(userId));
         ArgumentNullException.ThrowIfNull(email, nameof(email));
@@ -38,8 +37,8 @@ public sealed class TokenProvider
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId.Value.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, email.Value),
+            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(
                 JwtRegisteredClaimNames.Iat,

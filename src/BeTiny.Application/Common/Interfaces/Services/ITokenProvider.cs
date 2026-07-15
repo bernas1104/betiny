@@ -14,5 +14,5 @@ public interface ITokenProvider
     /// <param name="userId">The unique identifier of the user.</param>
     /// <param name="email">The email address of the user.</param>
     /// <returns>A <see cref="TokenResult"/> containing the issued token and its expiration date and time.</returns>
-    TokenResult IssueToken(UserId userId, Email email);
+    TokenResult IssueToken(string userId, string email);
 }
