@@ -29,8 +29,8 @@ public sealed class TokenProvider
     /// <inheritdoc/>
     public TokenResult IssueToken(string userId, string email)
     {
-        ArgumentNullException.ThrowIfNull(userId, nameof(userId));
-        ArgumentNullException.ThrowIfNull(email, nameof(email));
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
+        ArgumentException.ThrowIfNullOrWhiteSpace(email, nameof(email));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -42,8 +42,8 @@ public sealed class TokenProvider
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(
                 JwtRegisteredClaimNames.Iat,
-                _dateTimeProvider.UtcNow.ToString("o"),
-                ClaimValueTypes.DateTime
+                new DateTimeOffset(_dateTimeProvider.UtcNow).ToUnixTimeSeconds().ToString(),
+                ClaimValueTypes.Integer64
             )
         };
 
