@@ -64,4 +64,109 @@ public class PasswordHasherTest
         act.Should().Throw<ArgumentException>()
             .WithParameterName("password");
     }
+
+    [Fact]
+    public void VerifyPassword_CorrectPassword_ReturnsTrue()
+    {
+        var password = "Password1";
+        var hash = _hasher.HashPassword(password);
+
+        var result = _hasher.VerifyPassword(password, hash);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void VerifyPassword_WrongPassword_ReturnsFalse()
+    {
+        var password = "Password1";
+        var hash = _hasher.HashPassword(password);
+
+        var result = _hasher.VerifyPassword("WrongPassword", hash);
+
+        result.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("Pässw0rd\u00e9")]    // accented (2-byte UTF-8)
+    [InlineData("パスワード1aA")]       // CJK (3-byte UTF-8)
+    [InlineData("P@ss1\U0001F600")]   // emoji (4-byte UTF-8)
+    public void VerifyPassword_MultibytePassword_ReturnsTrue(string password)
+    {
+        var hash = _hasher.HashPassword(password);
+
+        var result = _hasher.VerifyPassword(password, hash);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void VerifyPassword_NullPassword_ThrowsArgumentNullException()
+    {
+        Action act = () => _hasher.VerifyPassword(null!, "someHash");
+
+        act.Should().Throw<ArgumentException>()
+            .WithParameterName("password");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void VerifyPassword_EmptyPassword_ThrowsArgumentException(string password)
+    {
+        Action act = () => _hasher.VerifyPassword(password, "someHash");
+
+        act.Should().Throw<ArgumentException>()
+            .WithParameterName("password");
+    }
+
+    [Fact]
+    public void VerifyPassword_NullHash_ThrowsArgumentNullException()
+    {
+        Action act = () => _hasher.VerifyPassword("somePassword", null!);
+
+        act.Should().Throw<ArgumentException>()
+            .WithParameterName("hashedPassword");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void VerifyPassword_EmptyHash_ThrowsArgumentException(string hash)
+    {
+        Action act = () => _hasher.VerifyPassword("somePassword", hash);
+
+        act.Should().Throw<ArgumentException>()
+            .WithParameterName("hashedPassword");
+    }
+
+    [Theory]
+    [InlineData("not-a-hash")]
+    [InlineData("garbage$$$")]
+    [InlineData("$2a$invalid")]
+    public void VerifyPassword_MalformedHash_ReturnsFalse(string hash)
+    {
+        Action act = () => _hasher.VerifyPassword("somePassword", hash);
+
+        act.Should().Throw<BCrypt.Net.SaltParseException>();
+    }
+
+    [Fact]
+    public void DummyPasswordHash_IsNonEmptyAndBcryptFormat()
+    {
+        var dummyHash = _hasher.DummyPasswordHash;
+
+        dummyHash.Should().NotBeNullOrEmpty();
+        dummyHash.Should().StartWith("$2");
+    }
+
+    [Fact]
+    public void VerifyPassword_AnyPasswordAgainstDummyHash_ReturnsFalse()
+    {
+        var dummyHash = _hasher.DummyPasswordHash;
+
+        var result = _hasher.VerifyPassword("anyPassword", dummyHash);
+
+        result.Should().BeFalse();
+    }
 }
