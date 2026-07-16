@@ -27,4 +27,16 @@ public abstract class Entity<TIdType>
         Id = id;
         CreatedAt = DateTime.UtcNow;
     }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Delete()
+    {
+        DeletedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
