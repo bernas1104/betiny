@@ -16,7 +16,7 @@ public abstract class Entity<TIdType>
     protected Entity()
     {
     }
-    #pragma warning restore
+    #pragma warning restore CS8618
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Entity{TIdType}"/> class with the specified identifier.
@@ -26,5 +26,17 @@ public abstract class Entity<TIdType>
     {
         Id = id;
         CreatedAt = DateTime.UtcNow;
+    }
+
+    internal void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    internal void Delete()
+    {
+        DeletedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

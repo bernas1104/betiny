@@ -92,7 +92,7 @@ The commit-msg hook runs `npx commitlint`, and the pre-commit hook runs `dotnet 
 
 The project follows DDD-inspired patterns with these base classes in `BeTiny.Domain.Common`:
 
-- **`Entity<TIdType>`** — base for all entities; provides `Id` (declared `virtual` so aggregates can `override` it with their typed ID), `IsActive`, `CreatedAt`, `UpdatedAt`, `DeletedAt`
+- **`Entity<TIdType>`** — base for all entities; provides `Id` (declared `virtual` so aggregates can `override` it with their typed ID), `IsActive`, `CreatedAt`, `UpdatedAt`, `DeletedAt`; exposes `internal Deactivate()` and `internal Delete()` (set `IsActive = false` / `DeletedAt = now` and stamp `UpdatedAt`) — these are `internal` so only the domain + tests can call them, enabled by `InternalsVisibleTo("BeTiny.UnitTests")` in `BeTiny.Domain.csproj`
 - **`AggregateRoot<TId, TIdType>`** — extends `Entity<TId>` where `TId : AggregateRootId<TIdType>`; marks an entity as an aggregate root and `override`s `Id` with the typed `TId` (instead of hiding it with `new`)
 - **`ValueObject`** — base for value objects with structural equality via `GetEqualityComponents()`
 - **`AggregateRootId<TIdType>`** — extends `ValueObject`; wraps the underlying ID type (`Value` property)
@@ -101,7 +101,7 @@ Concrete entities (e.g., `User : AggregateRoot<UserId, Guid>`) use a typed ID va
 
 `ShortUrl` has a unified `AliasUrl` property (required in the database, max 50 chars) with an `AliasUrlType` enum (`ShortCode`, `CustomAlias`) to distinguish auto-generated short codes from user-provided custom aliases. The constructor is **private**; instances are created via the static factory methods `CreateFromShortCode(...)` and `CreateFromCustomAlias(...)` (which resolve temporal coupling by setting the alias and expiration in one step). `SetAliasUrl` is private and enforces type-specific validation rules: short codes max 7 characters, custom aliases must match `^[A-Za-z0-9_-]{3,50}$` (exposed publicly via `ShortUrl.CustomAliasRegex()`). `SetAliasUrl` accepts an optional `IReservedAliasPolicy` and throws `ReservedAliasException` when the alias is reserved. `IsExpired` and `SetExpiration` accept `IDateTimeProvider` for testability.
 
-`Email` is a `sealed partial` value object (`: ValueObject`) and the single source of truth for a valid + normalized email. `Email.Create` trims, lowercases (`ToLowerInvariant`), enforces max 254 chars (RFC 5321), and validates via `Email.EmailRegex()` (`^[^@\s]+@[^@\s]+\.[^@\s]+$`, exposed via `[GeneratedRegex]`). Equality is structural on the normalized `Value`, so `Email.Create("A@X.com") == Email.Create("a@x.com")` — this makes email uniqueness case-insensitive end-to-end. `partial` is required by the `[GeneratedRegex]` source generator.
+`Email` is a `sealed partial` value object (`: ValueObject`) and the single source of truth for a valid + normalized email. `Email.Create` trims, lowercases (`ToLowerInvariant`), enforces max 254 chars (RFC 5321), and validates via `Email.EmailRegex()` (`^[^@\s]+@[^@\s]+\.[^@\s]+$`, exposed via `[GeneratedRegex]`). Equality is structural on the normalized `Value`, so `Email.Create("A@X.com") == Email.Create("a@x.com")` — this makes email uniqueness case-insensitive end-to-end. `partial` is required by the `[GeneratedRegex]` source generator. `Email.RedactedValue` exposes a logging-safe form (e.g. `b***@domain.com`) used by `LoginCommand`.
 
 `User` follows the same private-ctor + static-factory pattern as `ShortUrl`: the public `User(string email)` constructor was removed (it left `PasswordHash = string.Empty`, an invariant-violating half-built entity) and replaced by `User.Create(Email email, string password, IPasswordHasher passwordHasher)`. `Create` hashes the password **inside** the entity via the `IPasswordHasher` port (the invariant "a `User` never holds plaintext" lives in the domain), enforces password rules via `User.PasswordRegex()` (`^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$`: min 8, max 72, ≥1 upper / ≥1 lower / ≥1 digit, exposed via `[GeneratedRegex]`), sets `Plan = Plans.Free`, `IsActive = true`, and `CreatedAt = DateTime.UtcNow` (raw — no `IDateTimeProvider`, mirroring the `ShortUrl` ctor). `User.Email` is typed as the `Email` VO (not `string`). `User` is `sealed partial` for the `[GeneratedRegex]` source generator.
 
@@ -180,9 +180,11 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - `Result<T>.Errors` is **non-nullable** and defaults to `Array.Empty<Error>()`; `IsSuccess` is `Errors.Count == 0`
 - The base `Controller` class provides `HandleResult<T>(Result<T>, Func<IActionResult>)` to map results to `IActionResult` (including `ProblemDetails` for failures)
   - `ValidationError` → 400 Bad Request
+  - `UnauthorizedError` → 401 Unauthorized
+  - `ForbiddenError` → 403 Forbidden
   - `NotFoundError` → 404 Not Found
-  - `ExpiredError` → 410 Gone
   - `ConflictError` → 409 Conflict
+  - `ExpiredError` → 410 Gone
   - A failed result with no errors → 500 Internal Server Error (fallback `ProblemDetails`)
 - Exceptions reserved for truly exceptional / infrastructure failures
 - Dedicated domain exceptions map specific infrastructure failures to clean HTTP responses: `ReservedAliasException` (caught by `CreateShortUrlCommand` → 400), `DuplicateAliasUrlException` and `DuplicateEmailException` (caught by their handlers → 409)
@@ -203,14 +205,15 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 - **`IDeviceDetector`** / **`DeviceDetector`** — parses User-Agent strings via **UAParser** to classify devices as `Desktop`, `Mobile`, `Tablet`, or `Unknown`
 - **`IDateTimeProvider`** / **`DateTimeProvider`** — provides `DateTime.UtcNow` abstraction for testability
 - **`IReservedAliasPolicy`** / **`ReservedAliasPolicy`** — checks whether an alias is reserved, combining built-in defaults (`ReservedAliasDefaults`: `admin`, `login`, `dashboard`, `api`, `auth`, `health`, `swagger`, `docs`) with configurable entries (`ReservedAliasOptions` from `appsettings.json`); matching is case-insensitive. Used by `CreateShortUrlRequestValidator`, `CreateShortUrlCommand`, and `ShortUrl.SetAliasUrl`
-- **`IPasswordHasher`** / **`PasswordHasher`** — hashes passwords using **BCrypt** (via `BCrypt.Net-Next`, work factor `12`); the `IPasswordHasher` port lives in Domain (so `User.Create` can hash inside the entity), the impl + package live in Infrastructure. `VerifyPassword` is intentionally omitted (belongs to the login issue). Used by `User.Create` (domain) and `RegisterCommand`
+- **`IPasswordHasher`** / **`PasswordHasher`** — hashes and verifies passwords using **BCrypt** (via `BCrypt.Net-Next`, work factor `12`, using the enhanced modes `EnhancedHashPassword` / `EnhancedVerify`); the `IPasswordHasher` port lives in Domain (so `User.Create` can hash inside the entity), the impl + package live in Infrastructure. `VerifyPassword` catches `BCrypt.Net.SaltParseException` and returns `false` (so a malformed hash never throws). `DummyPasswordHash` is a precomputed hash of `"dummy"` used by `LoginCommand` to keep verification time roughly constant when the user is not found (timing-attack mitigation). Used by `User.Create` (domain), `RegisterCommand`, and `LoginCommand`
+- **`ITokenProvider`** / **`JwtTokenProvider`** — issues JWTs (HMAC SHA256 via `System.IdentityModel.Tokens.Jwt`) for authenticated users; `IssueToken(Guid userId, string email)` returns a `TokenResult(Token, ExpiresAt)`. Configured through `JwtOptions` (`Issuer`, `Audience`, `SigningKey`, `ExpiryMinutes`) and uses `IDateTimeProvider` for the issued-at / expiration timestamps so expiry is testable. The port lives in Application (`BeTiny.Application.Common.Interfaces.Services`), the impl + package live in Infrastructure. Used by `LoginCommand`
 
 ## IOC Registration
 
 - `ConfigureDatabases.cs` — registers `DbContext` and Redis connections
 - `ConfigureHandlers.cs` — scans and registers `IRequestHandler<>`, `INotificationHandler<>`, `ISender`, `IPublisher`, and pipeline behaviors
-- `ConfigureOptions.cs` — registers options from `appsettings.json`, including `IpApiOptions` and `ReservedAliasOptions` (validates each configured alias against `ShortUrl.CustomAliasRegex()` at startup)
-- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`, `IDateTimeProvider`, `IReservedAliasPolicy` / `ReservedAliasPolicy`, `ReservedAliasDefaults`, `IPasswordHasher` / `PasswordHasher`) and the Refit client for `IIpApi`
+- `ConfigureOptions.cs` — registers options from `appsettings.json`, including `IpApiOptions`, `ReservedAliasOptions` (validates each configured alias against `ShortUrl.CustomAliasRegex()` at startup), and `JwtOptions` (validates non-empty `Issuer`/`Audience`/`SigningKey`, a `SigningKey` of at least 32 UTF-8 bytes, and `ExpiryMinutes > 0` at startup)
+- `ConfigureServices.cs` — registers domain services (`IShortCodeGenerator`, `IIpResolver`, `IDeviceDetector`, `IDateTimeProvider`, `IReservedAliasPolicy` / `ReservedAliasPolicy`, `ReservedAliasDefaults`, `IPasswordHasher` / `PasswordHasher`, `ITokenProvider` / `JwtTokenProvider`) and the Refit client for `IIpApi`
 - `ConfigureValidators.cs` — registers FluentValidation validators from the Application assembly
 
 ## VS Code / Editor
@@ -222,6 +225,8 @@ Do not introduce circular dependencies or upward references (e.g., Domain should
 ## Technical Refinements
 
 After a technical refinement is completed, upload it to the respective Github Issue. It should be appended to the issues' description, not added as a issue comment.
+
+Also, save the file to the @.plans/ folder as a .md file with the following format: `technical-refinement-issue-<issue-number>.md`. If in doubt, read the folder for examples.
 
 ## Updates
 

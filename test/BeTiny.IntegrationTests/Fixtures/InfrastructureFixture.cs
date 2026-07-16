@@ -16,6 +16,10 @@ public class InfrastructureFixture : IAsyncLifetime
 
     public string PostgresConnectionString => Postgres.GetConnectionString();
     public string RedisConnectionString => Redis.GetConnectionString();
+    public string JwtIssuer { get; } = "https://betiny.io/";
+    public string JwtAudience { get; } = "https://betiny.io/";
+    public string JwtSigningKey { get; } = "xOkTe4bXXv9UHjgGEAbCRahs5Icbrjw7s1089l4W9gI=";
+    public int ExpiryMinutes { get; } = 60;
 
     public async Task InitializeAsync()
     {

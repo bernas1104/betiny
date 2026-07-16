@@ -49,6 +49,7 @@ public static class ConfigureServices
         services.AddScoped<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<IReservedAliasPolicy, ReservedAliasPolicy>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<ITokenProvider, JwtTokenProvider>();
         
         return services;
     }

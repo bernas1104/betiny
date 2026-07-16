@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using BeTiny.Application.Common.Options;
 using BeTiny.Domain.Entities;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,7 @@ public static class ConfigureOptions
     )
     {
         services.ConfigureReservedAliasOptions(configuration);
+        services.ConfigureJwtOptions(configuration);
 
         return services;
     }
@@ -51,5 +53,36 @@ public static class ConfigureOptions
         }
 
         services.Configure<ReservedAliasOptions>(reservedAliasOptionsSection);
+    }
+
+    private static void ConfigureJwtOptions(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        var jwtOptionsSection = configuration.GetSection("Jwt");
+        var jwtOptions = jwtOptionsSection.Get<JwtOptions>();
+
+        if (
+            jwtOptions == null ||
+                string.IsNullOrWhiteSpace(jwtOptions.Issuer) ||
+                string.IsNullOrWhiteSpace(jwtOptions.Audience) ||
+                string.IsNullOrWhiteSpace(jwtOptions.SigningKey) ||
+                Encoding.UTF8.GetBytes(jwtOptions.SigningKey).Length < 32 ||
+                jwtOptions.ExpiryMinutes <= 0
+        )
+        {
+            throw new InvalidOperationException(
+                "JWT configuration is invalid. Ensure Issuer, Audience, SigningKey are non-empty, "
+                    + "SigningKey is of valid length, and ExpiryMinutes is greater than zero.",
+                new ArgumentException(
+                    "One or more JWT configuration values are invalid. Ensure Issuer, Audience, "
+                        + "SigningKey are non-empty, SigningKey is of valid length, and ExpiryMinutes "
+                        + "is greater than zero."
+                )
+            );
+        }
+
+        services.Configure<JwtOptions>(jwtOptionsSection);
     }
 }

@@ -11,6 +11,7 @@ A URL shortener built as a system design exercise using **.NET 10** with Clean A
 - **Reserved aliases** (e.g. `admin`, `login`, `api`) are blocked from use as custom aliases and from auto-generated short codes; the built-in defaults can be extended via `appsettings.json`. Reserved custom aliases return **HTTP 400 Bad Request**.
 - Click event tracking runs as **fire-and-forget** on redirect — captures device type, IP address/country, User-Agent, and referer; redirects proceed even if tracking fails.
 - **User registration** (`POST /api/v1/auth/register`) with email validation, password rules, and duplicate-email prevention; passwords are hashed with BCrypt before storage.
+- **User login** (`POST /api/v1/auth/login`) validates credentials (with timing-attack mitigation for unknown users) and issues a JWT; disabled/deleted accounts return **HTTP 403 Forbidden**, invalid credentials return **HTTP 401 Unauthorized**.
 
 ## Architecture
 
@@ -48,6 +49,8 @@ Tests → (all projects)
 | Scanning       | Scrutor                                 |
 | HTTP clients   | Refit                                   |
 | Device parsing | UAParser                                |
+| Auth tokens    | JWT (HMAC SHA256 via System.IdentityModel.Tokens.Jwt) |
+| Password hashing | BCrypt.Net-Next                      |
 | Testing        | xUnit + Coverlet + NSubstitute + AwesomeAssertions + Bogus + Testcontainers |
 | Commit hooks   | Husky + Commitlint (conventional commits) |
 
@@ -100,6 +103,17 @@ Environment variables are prefixed with `BETINY_NPGSQL_*` and `BETINY_REDIS_*`:
 | Variable                     | Default         | Description            |
 |------------------------------|-----------------|------------------------|
 | `ReservedAliasPolicy:Aliases` | `[]` (empty)   | Extra aliases to block on top of the built-in defaults (`admin`, `login`, `dashboard`, `api`, `auth`, `health`, `swagger`, `docs`). Each entry must match `^[A-Za-z0-9_-]{3,50}$` or startup fails. |
+
+**Jwt** (configured in `appsettings.json`):
+
+| Variable                     | Default         | Description            |
+|------------------------------|-----------------|------------------------|
+| `Jwt:Issuer`                 | `""`            | Token issuer (must be non-empty). |
+| `Jwt:Audience`               | `""`            | Token audience (must be non-empty). |
+| `Jwt:SigningKey`             | `""`            | HMAC SHA256 signing key (must be non-empty and at least 32 UTF-8 bytes). |
+| `Jwt:ExpiryMinutes`          | `60`            | Token lifetime in minutes (must be > 0). |
+
+> JWT options are validated at startup; the app fails to boot if any value is invalid. Set these (e.g. via environment variables or `appsettings.Development.json`) before running the API.
 
 Connection strings are set in `appsettings.Development.json` under `ConnectionStrings:Postgres` and `ConnectionStrings:Redis`.
 

@@ -79,6 +79,8 @@ public abstract class Controller(ILogger<Controller> logger) : ControllerBase
         return errorType switch
         {
             ErrorTypes.ValidationError => 400,
+            ErrorTypes.UnauthorizedError => 401,
+            ErrorTypes.ForbiddenError => 403,
             ErrorTypes.NotFoundError => 404,
             ErrorTypes.ConflictError => 409,
             ErrorTypes.ExpiredError => 410,
