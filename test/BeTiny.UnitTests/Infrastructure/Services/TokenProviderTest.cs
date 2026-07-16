@@ -26,7 +26,7 @@ public sealed class TokenProviderTest
                 Issuer = "https://betiny.io/",
                 Audience = "https://betiny.io/",
                 SigningKey = "j7L9EruV7pI4EG0KNNJ/zEeXae22/yL1ofC2fVmGioE=",
-                ExpiryMinutes = TimeSpan.FromMinutes(60)
+                ExpiryMinutes = 60
             }
         );
 
@@ -200,7 +200,7 @@ public sealed class TokenProviderTest
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(result.Token);
         jwtToken.ValidTo.Should().BeCloseTo(
-            now.Add(_jwtOptions.Value.ExpiryMinutes),
+            now.AddMinutes(_jwtOptions.Value.ExpiryMinutes),
             TimeSpan.FromSeconds(1)
         );
     }
@@ -296,6 +296,6 @@ public sealed class TokenProviderTest
         // Assert
         result.Should().NotBeNull();
         result.Token.Should().NotBeNullOrEmpty();
-        result.ExpiresAt.Should().Be(now.Add(_jwtOptions.Value.ExpiryMinutes));
+        result.ExpiresAt.Should().Be(now.AddMinutes(_jwtOptions.Value.ExpiryMinutes));
     }
 }

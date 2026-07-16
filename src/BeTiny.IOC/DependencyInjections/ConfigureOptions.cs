@@ -69,7 +69,7 @@ public static class ConfigureOptions
                 string.IsNullOrWhiteSpace(jwtOptions.Audience) ||
                 string.IsNullOrWhiteSpace(jwtOptions.SigningKey) ||
                 Encoding.UTF8.GetBytes(jwtOptions.SigningKey).Length < 32 ||
-                jwtOptions.ExpiryMinutes <= TimeSpan.Zero
+                jwtOptions.ExpiryMinutes <= 0
         )
         {
             throw new InvalidOperationException(

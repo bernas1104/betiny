@@ -51,13 +51,13 @@ public sealed class TokenProvider
             issuer: _jwtOptions.Issuer,
             audience: _jwtOptions.Audience,
             claims: claims,
-            expires: _dateTimeProvider.UtcNow.Add(_jwtOptions.ExpiryMinutes),
+            expires: _dateTimeProvider.UtcNow.AddMinutes(_jwtOptions.ExpiryMinutes),
             signingCredentials: credentials
         );
 
         return new TokenResult(
             new JwtSecurityTokenHandler().WriteToken(token),
-            _dateTimeProvider.UtcNow.Add(_jwtOptions.ExpiryMinutes)
+            _dateTimeProvider.UtcNow.AddMinutes(_jwtOptions.ExpiryMinutes)
         );
     }
 }

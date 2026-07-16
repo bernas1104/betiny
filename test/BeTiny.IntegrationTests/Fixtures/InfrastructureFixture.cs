@@ -19,7 +19,7 @@ public class InfrastructureFixture : IAsyncLifetime
     public string JwtIssuer { get; } = "https://betiny.io/";
     public string JwtAudience { get; } = "https://betiny.io/";
     public string JwtSigningKey { get; } = "xOkTe4bXXv9UHjgGEAbCRahs5Icbrjw7s1089l4W9gI=";
-    public TimeSpan ExpiryMinutes { get => TimeSpan.FromMinutes(60); }
+    public int ExpiryMinutes { get; } = 60;
 
     public async Task InitializeAsync()
     {

@@ -20,7 +20,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.UseSetting("Jwt:Issuer", _infrastructure.JwtIssuer);
         builder.UseSetting("Jwt:Audience", _infrastructure.JwtAudience);
         builder.UseSetting("Jwt:SigningKey", _infrastructure.JwtSigningKey);
-        builder.UseSetting("Jwt:ExpiryMinutes", _infrastructure.ExpiryMinutes.TotalMinutes.ToString());
+        builder.UseSetting("Jwt:ExpiryMinutes", _infrastructure.ExpiryMinutes.ToString());
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
