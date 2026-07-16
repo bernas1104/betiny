@@ -29,12 +29,22 @@ public sealed class PasswordHasher : IPasswordHasher
     /// <exception cref="ArgumentException">Thrown when <paramref name="password"/> or <paramref name="hashedPassword"/> is empty or whitespace.</exception>
     public bool VerifyPassword(string password, string hashedPassword)
     {
+        ArgumentNullException.ThrowIfNull(password);
+        ArgumentNullException.ThrowIfNull(hashedPassword);
+
         if (string.IsNullOrWhiteSpace(password))
             throw new ArgumentException("Password cannot be null or whitespace.", nameof(password));
 
         if (string.IsNullOrWhiteSpace(hashedPassword))
             throw new ArgumentException("Hashed password cannot be null or whitespace.", nameof(hashedPassword));
 
-        return BCrypt.Net.BCrypt.EnhancedVerify(password, hashedPassword);
+        try
+        {
+            return BCrypt.Net.BCrypt.EnhancedVerify(password, hashedPassword);
+        }
+        catch (BCrypt.Net.SaltParseException)
+        {
+            return false;
+        }
     }
 }

@@ -10,14 +10,16 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace BeTiny.Infrastructure.Services;
 
-/// <inheritdoc/>
-public sealed class TokenProvider
+/// <summary>
+/// Provides functionality to issue JSON Web Tokens (JWT) for authentication.
+/// </summary>
+public sealed class JwtTokenProvider
     : ITokenProvider
 {
     private readonly JwtOptions _jwtOptions;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public TokenProvider(IOptions<JwtOptions> options, IDateTimeProvider dateTimeProvider)
+    public JwtTokenProvider(IOptions<JwtOptions> options, IDateTimeProvider dateTimeProvider)
     {
         ArgumentNullException.ThrowIfNull(options, nameof(options));
         ArgumentNullException.ThrowIfNull(dateTimeProvider, nameof(dateTimeProvider));
@@ -27,13 +29,15 @@ public sealed class TokenProvider
     }
 
     /// <inheritdoc/>
-    public TokenResult IssueToken(string userId, string email)
+    public TokenResult IssueToken(Guid userId, string email)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(userId, nameof(userId));
+        if (userId == Guid.Empty) throw new ArgumentException("User ID cannot be empty.", nameof(userId));
         ArgumentException.ThrowIfNullOrWhiteSpace(email, nameof(email));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var now = _dateTimeProvider.UtcNow;
+        var expiresAt = now.AddMinutes(_jwtOptions.ExpiryMinutes);
 
         var claims = new[]
         {
@@ -42,7 +46,7 @@ public sealed class TokenProvider
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(
                 JwtRegisteredClaimNames.Iat,
-                new DateTimeOffset(_dateTimeProvider.UtcNow).ToUnixTimeSeconds().ToString(),
+                new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64
             )
         };
@@ -51,13 +55,13 @@ public sealed class TokenProvider
             issuer: _jwtOptions.Issuer,
             audience: _jwtOptions.Audience,
             claims: claims,
-            expires: _dateTimeProvider.UtcNow.AddMinutes(_jwtOptions.ExpiryMinutes),
+            expires: expiresAt,
             signingCredentials: credentials
         );
 
         return new TokenResult(
             new JwtSecurityTokenHandler().WriteToken(token),
-            _dateTimeProvider.UtcNow.AddMinutes(_jwtOptions.ExpiryMinutes)
+            expiresAt
         );
     }
 }

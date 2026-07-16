@@ -47,7 +47,7 @@ public sealed class LoginCommandTest
             Arg.Any<CancellationToken>()
         ).Returns(user);
 
-        _tokenProvider.IssueToken(Arg.Any<string>(), Arg.Any<string>())
+        _tokenProvider.IssueToken(Arg.Any<Guid>(), Arg.Any<string>())
             .Returns(new TokenResult("dummy-token", now.AddHours(1)));
 
         // Act
@@ -76,14 +76,14 @@ public sealed class LoginCommandTest
             Arg.Any<CancellationToken>()
         ).Returns(user);
 
-        _tokenProvider.IssueToken(Arg.Any<string>(), Arg.Any<string>())
+        _tokenProvider.IssueToken(Arg.Any<Guid>(), Arg.Any<string>())
             .Returns(new TokenResult("dummy-token", DateTime.UtcNow.AddHours(1)));
 
         // Act
         await _command.Handle(new LoginRequest(email, password), CancellationToken.None);
 
         // Assert
-        _tokenProvider.Received(1).IssueToken(user.Id.Value.ToString(), user.Email.Value);
+        _tokenProvider.Received(1).IssueToken(user.Id.Value, user.Email.Value);
     }
 
     [Fact]
@@ -103,7 +103,10 @@ public sealed class LoginCommandTest
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.UnauthorizedError);
+        result.Errors.Should().ContainSingle(
+                e => e.ErrorType == ErrorTypes.UnauthorizedError
+                    && e.PropertyName == "Credentials"
+        );
     }
 
     [Fact]
@@ -127,7 +130,10 @@ public sealed class LoginCommandTest
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.UnauthorizedError);
+        result.Errors.Should().ContainSingle(
+            e => e.ErrorType == ErrorTypes.UnauthorizedError
+                && e.PropertyName == "Credentials"
+        );
     }
 
     [Fact]
@@ -163,6 +169,9 @@ public sealed class LoginCommandTest
         var email = "test@example.com";
         var password = "Password123!";
 
+        const string dummyHash = "$2a$12$dummyhashvaluethatlooksrealenough";
+        _passwordHasher.DummyPasswordHash.Returns(dummyHash);
+
         _repository.GetByFilterAsync(
             Arg.Any<Expression<Func<User, bool>>>(),
             Arg.Any<CancellationToken>()
@@ -197,7 +206,10 @@ public sealed class LoginCommandTest
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ForbiddenError);
+        result.Errors.Should().ContainSingle(
+            e => e.ErrorType == ErrorTypes.ForbiddenError
+                && e.PropertyName == "Account"
+        );
     }
 
     [Fact]
@@ -222,7 +234,10 @@ public sealed class LoginCommandTest
 
         // Assert
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.ErrorType == ErrorTypes.ForbiddenError);
+        result.Errors.Should().ContainSingle(
+            e => e.ErrorType == ErrorTypes.ForbiddenError
+                && e.PropertyName == "Account"
+        );
     }
 
     [Fact]

@@ -9,13 +9,13 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace BeTiny.UnitTests.Infrastructure.Services;
 
-public sealed class TokenProviderTest
+public sealed class JwtTokenProviderTest
 {
     private readonly IOptions<JwtOptions> _jwtOptions;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly TokenProvider _tokenProvider;
+    private readonly JwtTokenProvider _tokenProvider;
 
-    public TokenProviderTest()
+    public JwtTokenProviderTest()
     {
         _jwtOptions = Substitute.For<IOptions<JwtOptions>>();
         _dateTimeProvider = Substitute.For<IDateTimeProvider>();
@@ -30,7 +30,7 @@ public sealed class TokenProviderTest
             }
         );
 
-        _tokenProvider = new TokenProvider(_jwtOptions, _dateTimeProvider);
+        _tokenProvider = new JwtTokenProvider(_jwtOptions, _dateTimeProvider);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public sealed class TokenProviderTest
         IOptions<JwtOptions> nullOptions = null!;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TokenProvider(nullOptions, _dateTimeProvider));
+        Assert.Throws<ArgumentNullException>(() => new JwtTokenProvider(nullOptions, _dateTimeProvider));
     }
 
     [Fact]
@@ -50,25 +50,14 @@ public sealed class TokenProviderTest
         IDateTimeProvider nullDateTimeProvider = null!;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new TokenProvider(_jwtOptions, nullDateTimeProvider));
-    }
-
-    [Fact]
-    public void IssueToken_ThrowsArgumentNullException_WhenUserIdIsNull()
-    {
-        // Arrange
-        string nullUserId = null!;
-        string email = "test@example.com";
-
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => _tokenProvider.IssueToken(nullUserId, email));
+        Assert.Throws<ArgumentNullException>(() => new JwtTokenProvider(_jwtOptions, nullDateTimeProvider));
     }
 
     [Fact]
     public void IssueToken_EmptyUserId_ThrowsArgumentException()
     {
         // Arrange
-        string emptyUserId = "";
+        Guid emptyUserId = Guid.Empty;
         string email = "test@example.com";
 
         // Act & Assert
@@ -81,7 +70,7 @@ public sealed class TokenProviderTest
     public void IssueToken_ThrowsArgumentNullException_WhenEmailIsNull()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string nullEmail = null!;
 
         // Act & Assert
@@ -94,7 +83,7 @@ public sealed class TokenProviderTest
     public void IssueToken_EmptyEmail_ThrowsArgumentException(string email)
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
 
         // Act & Assert
         Action act = () => _tokenProvider.IssueToken(userId, email);
@@ -106,7 +95,7 @@ public sealed class TokenProviderTest
     public void IssueToken_ReturnsNonEmptyToken()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         // Act
@@ -121,7 +110,7 @@ public sealed class TokenProviderTest
     public void IssueToken_TokenContainsUserIdAsSubClaim()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         // Act
@@ -130,14 +119,14 @@ public sealed class TokenProviderTest
         // Assert
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(result.Token);
-        jwtToken.Subject.Should().Be(userId);
+        jwtToken.Subject.Should().Be(userId.ToString());
     }
 
     [Fact]
     public void IssueToken_TokenContainsEmailClaim()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         // Act
@@ -153,7 +142,7 @@ public sealed class TokenProviderTest
     public void IssueToken_TokenContainsJtiClaim()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         // Act
@@ -163,13 +152,15 @@ public sealed class TokenProviderTest
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(result.Token);
         jwtToken.Claims.First(c => c.Type == "jti").Value.Should().NotBeNullOrEmpty();
+        Guid.TryParse(jwtToken.Claims.First(c => c.Type == "jti").Value, out var g).Should().BeTrue();
+        g.Should().NotBe(Guid.Empty);
     }
 
     [Fact]
     public void IssueToken_TokenContainsIssuerAndAudience()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         // Act
@@ -186,7 +177,7 @@ public sealed class TokenProviderTest
     public void IssueToken_ExpiresAtMatchesNowPlusExpiryMinutes()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         var now = DateTime.UtcNow;
@@ -209,8 +200,11 @@ public sealed class TokenProviderTest
     public void IssueToken_TokenExpClaimMatchesExpiresAt()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
+
+        var now = DateTime.UtcNow;
+        _dateTimeProvider.UtcNow.Returns(now);
 
         // Act
         var result = _tokenProvider.IssueToken(userId, email);
@@ -220,14 +214,14 @@ public sealed class TokenProviderTest
         var jwtToken = handler.ReadJwtToken(result.Token);
         var expClaim = jwtToken.Claims.First(c => c.Type == "exp").Value;
         var exp = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim)).UtcDateTime;
-        exp.Should().BeCloseTo(jwtToken.ValidTo, TimeSpan.FromSeconds(1));
+        exp.Should().BeCloseTo(result.ExpiresAt, TimeSpan.FromSeconds(1));
     }
 
     [Fact]
     public void IssueToken_TokenIsSignedWithHs256()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         // Act
@@ -243,7 +237,7 @@ public sealed class TokenProviderTest
     public void IssueToken_TokenSignatureValidatesWithSigningKey()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         var now = DateTime.UtcNow;
@@ -283,7 +277,7 @@ public sealed class TokenProviderTest
     public void IssueToken_ReturnsTokenResult_WithValidTokenAndExpiration()
     {
         // Arrange
-        string userId = Guid.NewGuid().ToString();
+        Guid userId = Guid.NewGuid();
         string email = "test@example.com";
 
         var now = DateTime.UtcNow;

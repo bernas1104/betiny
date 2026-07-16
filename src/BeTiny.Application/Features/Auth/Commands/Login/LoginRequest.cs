@@ -14,7 +14,7 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
         RuleFor(x => x.Email)
             .NotEmpty()
             .WithMessage("Email is required.")
-            .MaximumLength(254)
+            .Must(email => (email ?? string.Empty).Trim().Length <= 254)
             .WithMessage("Email must not exceed 254 characters.")
             .Must(x => Email.EmailRegex().IsMatch(x?.Trim() ?? string.Empty))
             .WithMessage("Invalid email format.");

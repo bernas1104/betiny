@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging;
 namespace BeTiny.Application.Features.Auth.Commands.Login;
 
 public class LoginCommand(
-    IRepository<User, UserId, Guid> repository,
+    IRepository<User, UserId, Guid> userRepository,
     IPasswordHasher passwordHasher,
-    ITokenProvider tokenGenerator,
+    ITokenProvider tokenProvider,
     ILogger<LoginCommand> logger
 ) : IRequestHandler<LoginRequest, Result<LoginResponse>>
 {
@@ -21,7 +21,7 @@ public class LoginCommand(
     {
         var email = Email.Create(request.Email);
 
-        var user = await repository.GetByFilterAsync(u => u.Email == email, cancellationToken);
+        var user = await userRepository.GetByFilterAsync(u => u.Email == email, cancellationToken);
 
         var hashToVerify = user?.PasswordHash ?? passwordHasher.DummyPasswordHash;
         var passwordValid = passwordHasher.VerifyPassword(request.Password, hashToVerify);
@@ -38,7 +38,7 @@ public class LoginCommand(
             return Result<LoginResponse>.Failure(CreateAccountDisabledError());
         }
 
-        var tokenResult = tokenGenerator.IssueToken(user.Id.Value.ToString(), user.Email.Value);
+        var tokenResult = tokenProvider.IssueToken(user.Id.Value, user.Email.Value);
 
         return Result<LoginResponse>.Success(
             new LoginResponse(tokenResult.Token, tokenResult.ExpiresAt)
@@ -47,15 +47,15 @@ public class LoginCommand(
 
     private static Error CreateInvalidCredentialsError() => new (
         ErrorTypes.UnauthorizedError,
-        null,
-        "The provided email or password is incorrect.",
+        "Credentials",
+        "Invalid credentials.",
         ErrorSeverity.Medium
     );
 
     private static Error CreateAccountDisabledError() => new (
         ErrorTypes.ForbiddenError,
-        null,
-        "The account is disabled. Please contact support.",
+        "Account",
+        "Account is disabled.",
         ErrorSeverity.Medium
     );
 }

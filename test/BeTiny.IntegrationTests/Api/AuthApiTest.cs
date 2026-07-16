@@ -150,6 +150,8 @@ public class AuthApiTest : BaseIntegrationTest, IClassFixture<IntegrationTestFix
         var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem!.Title.Should().Be("UnauthorizedError");
     }
 
     [Fact]
@@ -159,6 +161,29 @@ public class AuthApiTest : BaseIntegrationTest, IClassFixture<IntegrationTestFix
         var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem!.Title.Should().Be("UnauthorizedError");
+    }
+
+    [Fact]
+    public async Task Login_NonexistentAndWrongpassword_ProduceIdenticalErrorBodies()
+    {
+        var registerRequest = new RegisterRequest("user@example.com", "Password1");
+        await Client.PostAsJsonAsync("/api/v1/auth/register", registerRequest);
+        
+        var loginRequestNonexistent = new LoginRequest("nonexistent@example.com", "Password1");
+        var responseNonexistent = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequestNonexistent);
+
+        var loginRequestWrongPassword = new LoginRequest("user@example.com", "WrongPassword");
+        var responseWrongPassword = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequestWrongPassword);
+
+        var problemNonexistent = await responseNonexistent.Content.ReadFromJsonAsync<ProblemDetails>();
+        var problemWrongPassword = await responseWrongPassword.Content.ReadFromJsonAsync<ProblemDetails>();
+
+        problemNonexistent!.Title.Should().Be("UnauthorizedError");
+        problemWrongPassword!.Title.Should().Be("UnauthorizedError");
+
+        problemNonexistent.Should().BeEquivalentTo(problemWrongPassword);
     }
 
     [Fact]
@@ -192,10 +217,10 @@ public class AuthApiTest : BaseIntegrationTest, IClassFixture<IntegrationTestFix
     [Fact]
     public async Task Login_EmailDifferByCase_Succeeds()
     {
-        var registerRequest = new RegisterRequest("user@example.com", "Password1");
+        var registerRequest = new RegisterRequest("User@example.COM", "Password1");
         await Client.PostAsJsonAsync("/api/v1/auth/register", registerRequest);
 
-        var loginRequest = new LoginRequest("USER@example.com", "Password1");
+        var loginRequest = new LoginRequest("user@example.com", "Password1");
         var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -210,22 +235,23 @@ public class AuthApiTest : BaseIntegrationTest, IClassFixture<IntegrationTestFix
     public async Task Login_ValidCredentials_TokenContainsUserIdAndEmailClaims()
     {
         var registerRequest = new RegisterRequest("user@example.com", "Password1");
-        await Client.PostAsJsonAsync("/api/v1/auth/register", registerRequest);
+        var registerResponse = await Client.PostAsJsonAsync("/api/v1/auth/register", registerRequest);
+        var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
 
         var loginRequest = new LoginRequest("user@example.com", "Password1");
         var response = await Client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        var login = await response.Content.ReadFromJsonAsync<LoginResponse>();
 
-        result.Should().NotBeNull();
-        result.Token.Should().NotBeNullOrEmpty();
+        login.Should().NotBeNull();
+        login.Token.Should().NotBeNullOrEmpty();
 
         var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtToken = tokenHandler.ReadJwtToken(result.Token);
+        var jwtToken = tokenHandler.ReadJwtToken(login.Token);
 
-        jwtToken.Claims.Should().Contain(c => c.Type == "sub");
-        jwtToken.Claims.Should().Contain(c => c.Type == "email");
+        jwtToken.Claims.First(c => c.Type == "sub").Value.Should().Be(registered!.Id.ToString());
+        jwtToken.Claims.First(c => c.Type == "email").Value.Should().Be(registered.Email);
     }
 }

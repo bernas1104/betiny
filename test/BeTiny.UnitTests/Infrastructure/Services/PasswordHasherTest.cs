@@ -105,7 +105,7 @@ public class PasswordHasherTest
     {
         Action act = () => _hasher.VerifyPassword(null!, "someHash");
 
-        act.Should().Throw<ArgumentException>()
+        act.Should().Throw<ArgumentNullException>()
             .WithParameterName("password");
     }
 
@@ -125,7 +125,7 @@ public class PasswordHasherTest
     {
         Action act = () => _hasher.VerifyPassword("somePassword", null!);
 
-        act.Should().Throw<ArgumentException>()
+        act.Should().Throw<ArgumentNullException>()
             .WithParameterName("hashedPassword");
     }
 
@@ -146,9 +146,9 @@ public class PasswordHasherTest
     [InlineData("$2a$invalid")]
     public void VerifyPassword_MalformedHash_ReturnsFalse(string hash)
     {
-        Action act = () => _hasher.VerifyPassword("somePassword", hash);
+        var result = _hasher.VerifyPassword("somePassword", hash);
 
-        act.Should().Throw<BCrypt.Net.SaltParseException>();
+        result.Should().BeFalse();
     }
 
     [Fact]
