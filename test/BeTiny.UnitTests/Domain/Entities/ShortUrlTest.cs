@@ -3,6 +3,7 @@ using BeTiny.Domain.Common.Interfaces;
 using BeTiny.Domain.Entities;
 using BeTiny.Domain.Exceptions;
 using BeTiny.Domain.Interfaces;
+using BeTiny.Domain.ValueObjects;
 using Bogus;
 
 namespace BeTiny.UnitTests.Domain.Entities;
@@ -383,6 +384,57 @@ public sealed class ShortUrlTest
 
         actLowerCase.Should().Throw<ReservedAliasException>();
         actUpperCase.Should().Throw<ReservedAliasException>();
+    }
+
+    [Fact]
+    public void SetUserId_SetsUserId_WhenUserIdProvidedAndNotAlreadySet()
+    {
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
+
+        var userId = UserId.CreateUnique();
+
+        shortUrl.SetUserId(userId);
+
+        shortUrl.UserId.Should().Be(userId);
+    }
+
+    [Fact]
+    public void SetUserId_ThrowsArgumentNullException_WhenUserIdIsNull()
+    {
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
+
+        Action act = () => shortUrl.SetUserId(null!);
+
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("userId");
+    }
+
+    [Fact]
+    public void SetUserId_ThrowsInvalidOperationException_WhenUserIdAlreadySet()
+    {
+        var shortUrl = ShortUrl.CreateFromShortCode(
+            "https://example.com",
+            "abc123",
+            null,
+            _dateTimeProvider
+        );
+
+        var userId = UserId.CreateUnique();
+        shortUrl.SetUserId(userId);
+
+        Action act = () => shortUrl.SetUserId(UserId.CreateUnique());
+
+        act.Should().Throw<InvalidOperationException>();
     }
 
     private string GenerateRandomAlias() => _faker.Random.AlphaNumeric(_faker.Random.Int(3, 7));

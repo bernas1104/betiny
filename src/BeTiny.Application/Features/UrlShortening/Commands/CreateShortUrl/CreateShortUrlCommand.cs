@@ -21,6 +21,7 @@ public class CreateShortUrlCommand(
     IShortCodeGenerator shortCodeGenerator,
     IDateTimeProvider dateTimeProvider,
     IReservedAliasPolicy reservedAliasPolicy,
+    ICurrentUser currentUser,
     ILogger<CreateShortUrlCommand> logger
 ) : IRequestHandler<CreateShortUrlRequest, Result<CreateShortUrlResponse>>
 {
@@ -70,6 +71,9 @@ public class CreateShortUrlCommand(
                 dateTimeProvider,
                 reservedAliasPolicy
             );
+
+            if (currentUser.UserId is not null)
+                shortUrl.SetUserId(currentUser.UserId);
         }
         catch (ReservedAliasException ex)
         {
@@ -114,6 +118,9 @@ public class CreateShortUrlCommand(
                 dateTimeProvider,
                 reservedAliasPolicy
             );
+
+            if (currentUser.UserId is not null)
+                shortUrl.SetUserId(currentUser.UserId);
 
             if (await TryAddShortUrlAsync(shortUrl, cancellationToken))
                 return Result<ShortUrl>.Success(shortUrl);

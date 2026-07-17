@@ -24,6 +24,7 @@ public static class ConfigureDependencyInjection
     services.RegisterHandlers();
     services.RegisterServices(configuration);
     services.RegisterValidators();
+    services.RegisterAuthentication(configuration);
     
     return services;
   }

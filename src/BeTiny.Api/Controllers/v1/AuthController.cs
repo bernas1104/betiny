@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using BeTiny.Application.Common.Interfaces.Cqrs;
 using BeTiny.Application.Features.Auth.Commands.Login;
 using BeTiny.Application.Features.Auth.Commands.Register;
+using BeTiny.Application.Features.Auth.Queries.GetMe;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BeTiny.Api.Controllers.v1;
@@ -47,6 +49,23 @@ public class AuthController(ISender sender, ILogger<AuthController> logger) : Co
     )
     {
         var result = await sender.Send(request, cancellationToken);
+
+        return HandleResult(
+            result,
+            () => Ok(result.Value)
+        );
+    }
+
+    /// <summary>
+    /// Gets the currently authenticated user's details.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A 200 OK response with the authenticated user's details.</returns>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> Me(CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetMeRequest(), cancellationToken);
 
         return HandleResult(
             result,

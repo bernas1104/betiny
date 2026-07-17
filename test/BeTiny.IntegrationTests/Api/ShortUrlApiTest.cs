@@ -1,8 +1,8 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using BeTiny.Application.Common.Interfaces.Cqrs;
+using BeTiny.Application.Features.Auth.Commands.Register;
 using BeTiny.Application.Features.UrlShortening.Commands.CreateShortUrl;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
@@ -75,6 +75,60 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
 
         result.Should().NotBeNull();
         result!.ShortUrl.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task CreateShortUrl_WithValidToken_PersistsUserId()
+    {
+        var email = $"test-{Guid.NewGuid()}@example.com";
+
+        var registerResponse = await Client.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest(email, "Password123!"));
+        var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+
+        var userId = registered!.Id;
+
+        var token = Fixture.TokenFactory.CreateToken(userId, email, "Free");
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var request = new CreateShortUrlRequest("https://www.example.com");
+        
+        var response = await Client.PostAsJsonAsync("/api/v1/UrlShortener", request);
+        var result = await response.Content.ReadFromJsonAsync<CreateShortUrlResponse>();
+        var aliasUrl = result!.ShortUrl;
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BeTinyContext>();
+
+        var shortUrlEntity = await context.ShortUrls
+            .FirstOrDefaultAsync(x => x.AliasUrl == aliasUrl);
+
+        shortUrlEntity.Should().NotBeNull();
+        shortUrlEntity!.UserId.Should().NotBeNull();
+        shortUrlEntity.UserId!.Value.Should().Be(userId);
+    }
+
+    [Fact]
+    public async Task CreateShortUrl_WithoutToken_PersistsNullUserId()
+    {
+        var request = new CreateShortUrlRequest("https://www.example.com");
+        
+        var response = await Client.PostAsJsonAsync("/api/v1/UrlShortener", request);
+        var result = await response.Content.ReadFromJsonAsync<CreateShortUrlResponse>();
+        var aliasUrl = result!.ShortUrl;
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<BeTinyContext>();
+
+        var shortUrlEntity = await context.ShortUrls
+            .FirstOrDefaultAsync(x => x.AliasUrl == aliasUrl);
+
+        shortUrlEntity.Should().NotBeNull();
+        shortUrlEntity!.UserId.Should().BeNull();
     }
 
     [Fact]

@@ -1,8 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using BeTiny.Application.Features.Auth.Commands.Login;
 using BeTiny.Application.Features.Auth.Commands.Register;
+using BeTiny.Application.Features.Auth.Queries.GetMe;
+using BeTiny.Domain.Enums;
 using BeTiny.Infrastructure.Postgres.Context;
 using BeTiny.IntegrationTests.Fixtures;
 using Microsoft.AspNetCore.Mvc;
@@ -253,5 +256,60 @@ public class AuthApiTest : BaseIntegrationTest, IClassFixture<IntegrationTestFix
 
         jwtToken.Claims.First(c => c.Type == "sub").Value.Should().Be(registered!.Id.ToString());
         jwtToken.Claims.First(c => c.Type == "email").Value.Should().Be(registered.Email);
+    }
+
+    [Fact]
+    public async Task Me_WithoutToken_ReturnsUnauthorized()
+    {
+        var response = await Client.GetAsync("/api/v1/auth/me");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Me_WithValidToken_ReturnsOk()
+    {
+        var registerRequest = new RegisterRequest("user@example.com", "Password1");
+        var registerResponse = await Client.PostAsJsonAsync("/api/v1/auth/register", registerRequest);
+        var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+
+        var token = Fixture.TokenFactory.CreateToken(registered!.Id, registered.Email);
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await Client.GetAsync("/api/v1/auth/me");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var result = await response.Content.ReadFromJsonAsync<GetMeResponse>();
+
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(registered.Id);
+        result.Email.Should().Be(registered.Email);
+        result.Plan.Should().Be(Plans.Free.ToString());
+    }
+
+    [Fact]
+    public async Task Me_WithExpiredToken_ReturnsUnauthorized()
+    {
+        var token = Fixture.TokenFactory.CreateExpiredToken(Guid.NewGuid(), "user@example.com");
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await Client.GetAsync("/api/v1/auth/me");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Me_WithInvalidSignatureToken_ReturnsUnauthorized()
+    {
+        var token = Fixture.TokenFactory.CreateInvalidSignatureToken(Guid.NewGuid(), "user@example.com");
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await Client.GetAsync("/api/v1/auth/me");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }
