@@ -413,7 +413,7 @@ public sealed class ShortUrlTest
             _dateTimeProvider
         );
 
-        Action act = () => shortUrl.SetUserId(null);
+        Action act = () => shortUrl.SetUserId(null!);
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("userId");

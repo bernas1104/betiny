@@ -112,7 +112,7 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
         }
     }
 
-    public void SetUserId(UserId? userId)
+    public void SetUserId(UserId userId)
     {
         ArgumentNullException.ThrowIfNull(userId, nameof(userId));
 

@@ -80,7 +80,7 @@ public class ShortUrlApiTest : BaseIntegrationTest, IClassFixture<IntegrationTes
     [Fact]
     public async Task CreateShortUrl_WithValidToken_PersistsUserId()
     {
-        var email = "test@example.com";
+        var email = $"test-{Guid.NewGuid()}@example.com";
 
         var registerResponse = await Client.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest(email, "Password123!"));
         var registered = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
