@@ -112,6 +112,16 @@ public sealed partial class ShortUrl : AggregateRoot<ShortUrlId, Guid>
         }
     }
 
+    public void SetUserId(UserId? userId)
+    {
+        ArgumentNullException.ThrowIfNull(userId, nameof(userId));
+
+        if (UserId is not null)
+            throw new InvalidOperationException("User ID has already been set for this short URL.");
+
+        UserId = userId;
+    }
+
     /// <summary>
     /// Creates a new instance of <see cref="ShortUrl"/> using a short code.
     /// </summary>

@@ -12,6 +12,7 @@ A URL shortener built as a system design exercise using **.NET 10** with Clean A
 - Click event tracking runs as **fire-and-forget** on redirect — captures device type, IP address/country, User-Agent, and referer; redirects proceed even if tracking fails.
 - **User registration** (`POST /api/v1/auth/register`) with email validation, password rules, and duplicate-email prevention; passwords are hashed with BCrypt before storage.
 - **User login** (`POST /api/v1/auth/login`) validates credentials (with timing-attack mitigation for unknown users) and issues a JWT; disabled/deleted accounts return **HTTP 403 Forbidden**, invalid credentials return **HTTP 401 Unauthorized**.
+- **Protected endpoints** via JWT Bearer authentication (`[Authorize]`); `GET /api/v1/auth/me` returns the authenticated user's profile and serves as the auth test endpoint. The original endpoints (`register`, `login`, URL shortening, redirect) remain anonymous; short URL creation optionally links to the authenticated user when a valid token is present.
 
 ## Architecture
 

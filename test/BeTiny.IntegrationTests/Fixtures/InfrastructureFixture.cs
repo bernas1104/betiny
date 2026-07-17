@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
 
@@ -5,6 +6,16 @@ namespace BeTiny.IntegrationTests.Fixtures;
 
 public class InfrastructureFixture : IAsyncLifetime
 {
+    private readonly IConfiguration _configuration;
+
+    public InfrastructureFixture()
+    {
+        _configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.Test.json")
+            .Build();
+    }
+
     public PostgreSqlContainer Postgres { get; } = new PostgreSqlBuilder("postgres:16-alpine")
         .WithDatabase("betiny_test")
         .WithUsername("postgres")
@@ -16,10 +27,10 @@ public class InfrastructureFixture : IAsyncLifetime
 
     public string PostgresConnectionString => Postgres.GetConnectionString();
     public string RedisConnectionString => Redis.GetConnectionString();
-    public string JwtIssuer { get; } = "https://betiny.io/";
-    public string JwtAudience { get; } = "https://betiny.io/";
-    public string JwtSigningKey { get; } = "xOkTe4bXXv9UHjgGEAbCRahs5Icbrjw7s1089l4W9gI=";
-    public int ExpiryMinutes { get; } = 60;
+    public string JwtIssuer => _configuration["Jwt:Issuer"]!;
+    public string JwtAudience => _configuration["Jwt:Audience"]!;
+    public string JwtSigningKey => _configuration["Jwt:SigningKey"]!;
+    public int JwtExpiryMinutes => int.Parse(_configuration["Jwt:ExpiryMinutes"]!);
 
     public async Task InitializeAsync()
     {

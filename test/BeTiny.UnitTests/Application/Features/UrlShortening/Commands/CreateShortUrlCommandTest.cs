@@ -17,6 +17,7 @@ public class CreateShortUrlCommandTest
     private readonly IRepository<ShortUrl, ShortUrlId, Guid> _shortUrlRepository;
     private readonly IShortCodeGenerator _shortCodeGenerator;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ICurrentUser _currentUser;
     private readonly ILogger<CreateShortUrlCommand> _logger;
     private readonly IReservedAliasPolicy _reservedAliasPolicy;
     private readonly CreateShortUrlCommand _handler;
@@ -27,7 +28,7 @@ public class CreateShortUrlCommandTest
         _shortCodeGenerator = Substitute.For<IShortCodeGenerator>();
         _dateTimeProvider = Substitute.For<IDateTimeProvider>();
         _reservedAliasPolicy = Substitute.For<IReservedAliasPolicy>();
-
+        _currentUser = Substitute.For<ICurrentUser>();
         _logger = Substitute.For<ILogger<CreateShortUrlCommand>>();
 
         _handler = new CreateShortUrlCommand(
@@ -35,6 +36,7 @@ public class CreateShortUrlCommandTest
             _shortCodeGenerator,
             _dateTimeProvider,
             _reservedAliasPolicy,
+            _currentUser,
             _logger
         );
     }
@@ -326,5 +328,66 @@ public class CreateShortUrlCommandTest
             .Where(call => (LogLevel)call.GetArguments()[0]! == LogLevel.Warning)
             .Should()
             .ContainSingle();
+    }
+
+    [Fact]
+    public async Task Handle_WhenCurrentUserAuthenticated_SetsUserIdOnShortUrl()
+    {
+        // Arrange
+        var request = new CreateShortUrlRequest("https://www.example.com");
+
+        _shortCodeGenerator.GenerateShortCode().Returns("abc123");
+        
+        _currentUser.UserId.Returns(UserId.CreateUnique());
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        await _shortUrlRepository.Received(1)
+            .AddAsync(
+                Arg.Is<ShortUrl>(s => s.UserId == _currentUser.UserId),
+                Arg.Any<CancellationToken>()
+            );
+    }
+
+    [Fact]
+    public async Task Handle_WhenCurrentUserAuthenticated_SetsUserIdOnShortUrlWithCustomAlias()
+    {
+        // Arrange
+        var request = new CreateShortUrlRequest("https://www.example.com", "custom");
+
+        _currentUser.UserId.Returns(UserId.CreateUnique());
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        await _shortUrlRepository.Received(1)
+            .AddAsync(
+                Arg.Is<ShortUrl>(s => s.UserId == _currentUser.UserId),
+                Arg.Any<CancellationToken>()
+            );
+    }
+
+    [Fact]
+    public async Task Handle_WhenCurrentUserAnonymous_DoesNotSetUserIdOnShortUrl()
+    {
+        // Arrange
+        var request = new CreateShortUrlRequest("https://www.example.com");
+        
+        _shortCodeGenerator.GenerateShortCode().Returns("abc123");
+
+        _currentUser.UserId.Returns((UserId?)null);
+
+        // Act
+        var result = await _handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        await _shortUrlRepository.Received(1)
+            .AddAsync(
+                Arg.Is<ShortUrl>(s => s.UserId == null),
+                Arg.Any<CancellationToken>()
+            );
     }
 }

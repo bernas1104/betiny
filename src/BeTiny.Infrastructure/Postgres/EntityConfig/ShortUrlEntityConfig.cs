@@ -29,6 +29,12 @@ public class ShortUrlEntityConfig : IEntityTypeConfiguration<ShortUrl>
                 value => value == null ? null : UserId.Create(value.Value)
             );
 
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
+
         builder.Property(x => x.OriginalUrl)
             .HasMaxLength(2048)
             .HasColumnName("OriginalUrl")
